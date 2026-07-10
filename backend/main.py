@@ -1,4 +1,4 @@
-from fastapi import FastAPI, UploadFile, File
+from fastapi import FastAPI, UploadFile, File, HTTPException
 import sys
 import os
 
@@ -17,6 +17,15 @@ def root():
 @app.post("/analyze")
 async def analyze(file: UploadFile = File(...)):
     content = await file.read()
-    source_code = content.decode("utf-8")
-    result = analyze_code(source_code)
+
+    try:
+        source_code = content.decode("utf-8")
+    except UnicodeDecodeError:
+        raise HTTPException(status_code=400, detail="File is not valid UTF-8 text.")
+
+    try:
+        result = analyze_code(source_code)
+    except SyntaxError as e:
+        raise HTTPException(status_code=400, detail=f"Invalid Python syntax: {e}")
+
     return result
