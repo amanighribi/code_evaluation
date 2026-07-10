@@ -56,3 +56,44 @@ class Bar:
     result = analyze_code(code)
     assert result["num_functions"] == 2
     assert result["num_classes"] == 1
+
+def test_detects_unused_import():
+    code = "import os\n\ndef foo():\n    return 1\n"
+    result = analyze_code(code)
+    assert any("unused" in issue for issue in result["issues"])
+
+
+def test_detects_bare_except():
+    code = """
+def foo():
+    try:
+        pass
+    except:
+        pass
+"""
+    result = analyze_code(code)
+    assert any("Bare 'except:'" in issue for issue in result["issues"])
+
+
+def test_detects_magic_number():
+    code = "def foo(x):\n    if x > 42:\n        return True\n"
+    result = analyze_code(code)
+    assert any("Magic number" in issue for issue in result["issues"])
+
+
+def test_detects_unused_variable():
+    code = "def foo():\n    x = 5\n    return 1\n"
+    result = analyze_code(code)
+    assert any("assigned but never used" in issue for issue in result["issues"])
+
+
+def test_detects_duplicate_functions():
+    code = """
+def foo(a, b):
+    return a + b
+
+def bar(a, b):
+    return a + b
+"""
+    result = analyze_code(code)
+    assert any("duplicate" in issue for issue in result["issues"])
