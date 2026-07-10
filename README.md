@@ -18,23 +18,22 @@ This week focuses on the first two architecture layers (\*\*Couche 1 — Ingesti
 
 
 
-\### What's built
-
-\- A Python static code analyzer built with the built-in `ast` module (no third-party analysis libraries), detecting:
-
-&#x20; - Missing docstrings
-
-&#x20; - Functions with too many parameters
-
-&#x20; - High cyclomatic complexity
-
-&#x20; - Overly long functions
-
-&#x20; - Naming convention violations (snake\_case for functions, PascalCase for classes)
-
-\- A FastAPI endpoint (`POST /analyze`) that accepts a `.py` file and returns a structured JSON report
-
-\- Swagger UI auto-documentation at `/docs`
+### What's built
+- A Python static code analyzer built with the built-in `ast` module (no third-party analysis libraries), detecting:
+  - Missing docstrings
+  - Functions with too many parameters
+  - High cyclomatic complexity
+  - Overly long functions
+  - Naming convention violations (snake_case for functions, PascalCase for classes)
+  - Unused imports
+  - Bare `except:` clauses
+  - Magic numbers in comparisons
+  - Unused variables
+  - Duplicate function bodies
+- A FastAPI endpoint (`POST /analyze`) that accepts a `.py` file and returns a structured JSON report
+- Swagger UI auto-documentation at `/docs`
+- Dockerized (`Dockerfile` + `.dockerignore`) — tested and working via `docker build` / `docker run`
+- 11 passing unit tests (`pytest`) covering all detection rules
 
 
 
