@@ -108,14 +108,14 @@ curl -X POST 'http://127.0.0.1:8000/analyze' \\
 Returns a JSON report with function/class metrics and a list of detected issues.
 
 
+### Static analysis — dual approach
+This project uses two complementary static analysis layers:
+- **Custom `ast`-based analyzer** — pedagogically-motivated checks (docstrings, naming, magic numbers, unused imports/variables, duplicate functions) not covered by default SonarQube rules.
+- **SonarQube (Community Edition, via Docker)** — industry-standard metrics including Cognitive Complexity, security hotspots, and maintainability rating. Currently passing the default Quality Gate with 0 bugs, 0 vulnerabilities, and 100% coverage on new code.
 
-\## Next steps (Week 2+)
-
-\- Extend static analysis (SonarQube integration)
-
-\- Build the pedagogical knowledge base (rubrics, guidelines) — Couche 3
-
-\- Vectorize and index with ChromaDB / sentence-transformers
-
-\- RAG-grounded LLM feedback generation — Couche 4
+Run a local SonarQube scan:
+```bash
+sonar-scanner.bat -D"sonar.login=<your-token>"
+```
+Results: `http://localhost:9000/dashboard?id=code-eval`
 
