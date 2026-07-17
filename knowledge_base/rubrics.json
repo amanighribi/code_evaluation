@@ -1,0 +1,142 @@
+[
+  {
+    "rule_id": "missing_docstring",
+    "category": "documentation",
+    "severity": "minor",
+    "source": "PEP 257 - Docstring Conventions",
+    "analyzer_check": "has_docstring == false",
+    "chunks": {
+      "rule": "Missing Docstring. Every function and class should have a docstring explaining what it does, its parameters, and what it returns, unless the function is trivially self-explanatory (e.g. a one-line getter).",
+      "why_it_matters": "Missing Docstring. Docstrings are the first thing a reader, a teammate, a grader, or your future self, checks to understand a function's purpose without reading its full implementation. In collaborative and academic settings, undocumented code significantly increases the time needed to review, maintain, or extend it. PEP 257 establishes docstrings as a core Python convention, not an optional nicety.",
+      "good_example": "Missing Docstring example. def calculate_average(grades): a docstring should explain that it returns the arithmetic mean of a list of grades, describing the grades parameter and the float return value.",
+      "common_mistake": "Missing Docstring common mistake. Writing a docstring that just restates the function name (e.g. 'Calculates average.' with no mention of parameters or return value) provides little more value than no docstring at all.",
+      "feedback_tone": "Missing Docstring feedback guidance. Explain why the docstring matters for this specific function, not just that one is missing. If the function is complex, emphasize that the docstring reduces cognitive load for readers."
+    }
+  },
+  {
+    "rule_id": "too_many_parameters",
+    "category": "design",
+    "severity": "minor",
+    "source": "Clean Code (Robert C. Martin) - function argument guidelines",
+    "analyzer_check": "num_params > 4",
+    "chunks": {
+      "rule": "Too Many Parameters. A function should ideally take 0 to 3 parameters. More than 4 is a signal the function may be doing too much or that related parameters should be grouped into an object or dataclass.",
+      "why_it_matters": "Too Many Parameters. Functions with many parameters are hard to call correctly, since it is easy to mix up argument order, hard to test because of many combinations, and often indicate the function has too many responsibilities.",
+      "good_example": "Too Many Parameters example. Instead of a function taking six loose parameters like name, age, major, year, gpa, and email, group related data into a single StudentProfile object and pass that one object instead.",
+      "common_mistake": "Too Many Parameters common mistake. Adding a new parameter every time a function needs one more piece of data, rather than reconsidering the function's design.",
+      "feedback_tone": "Too Many Parameters feedback guidance. Suggest grouping related parameters into a dict or class rather than just saying reduce parameters; give a concrete regrouping idea if possible."
+    }
+  },
+  {
+    "rule_id": "high_cyclomatic_complexity",
+    "category": "maintainability",
+    "severity": "major",
+    "source": "McCabe, T.J. (1976). A Complexity Measure. IEEE Transactions on Software Engineering.",
+    "analyzer_check": "cyclomatic_complexity > 5",
+    "chunks": {
+      "rule": "High Cyclomatic Complexity. Cyclomatic complexity counts the number of independent execution paths through a function, where each if, loop, or exception handler adds one path. A complexity above five to ten is generally considered hard to test and understand.",
+      "why_it_matters": "High Cyclomatic Complexity. High complexity means more test cases are needed for full coverage, and more mental effort is needed to trace through all possible branches. It strongly correlates with defect rates in real world studies.",
+      "good_example": "High Cyclomatic Complexity example. Break a highly branching function into smaller functions, each handling one condition or responsibility, and compose them together instead of nesting many conditions in one function.",
+      "common_mistake": "High Cyclomatic Complexity common mistake. Nesting many if, elif, else blocks instead of using early returns or extracting helper functions.",
+      "feedback_tone": "High Cyclomatic Complexity feedback guidance. Point to the specific branching structure causing the complexity, such as a nested if inside a for loop, rather than a vague instruction to simplify this function."
+    }
+  },
+  {
+    "rule_id": "function_too_long",
+    "category": "maintainability",
+    "severity": "minor",
+    "source": "Clean Code (Robert C. Martin) - functions should be small",
+    "analyzer_check": "length > 30 lines",
+    "chunks": {
+      "rule": "Function Too Long. A function longer than about 30 lines is often doing more than one job and is a candidate for splitting into smaller, named helper functions.",
+      "why_it_matters": "Function Too Long. Shorter functions are easier to read in one glance, easier to name meaningfully, and easier to reuse and test independently.",
+      "good_example": "Function Too Long example. Extract logically distinct steps, such as input validation, processing, and output formatting, into helper functions with descriptive names, so the main function reads like a short list of steps.",
+      "common_mistake": "Function Too Long common mistake. Writing one large function that handles input validation, processing, and output formatting all in one block.",
+      "feedback_tone": "Function Too Long feedback guidance. Suggest specific extraction points if identifiable, for example noting that the validation logic at the start could become its own function."
+    }
+  },
+  {
+    "rule_id": "naming_convention_violation",
+    "category": "readability",
+    "severity": "minor",
+    "source": "PEP 8 - Style Guide for Python Code",
+    "analyzer_check": "function not snake_case OR class not PascalCase",
+    "chunks": {
+      "rule": "Naming Convention Violation. Python convention from PEP 8 requires function and variable names in snake_case, and class names in PascalCase.",
+      "why_it_matters": "Naming Convention Violation. Consistent naming makes code instantly recognizable; seeing PascalCase tells a reader this is a class without needing more context. Violating convention creates friction for anyone reading or reviewing the code, including graders.",
+      "good_example": "Naming Convention Violation example. A class named StudentRecord using PascalCase, containing a method named calculate_gpa using snake_case, follows the correct Python naming convention.",
+      "common_mistake": "Naming Convention Violation common mistake. Using camelCase, common in Java or JavaScript, out of habit, or using all uppercase method names.",
+      "feedback_tone": "Naming Convention Violation feedback guidance. Note that this is a convention rather than a functional bug, but explain that following it matters for team readability and tooling consistency."
+    }
+  },
+  {
+    "rule_id": "unused_import",
+    "category": "cleanliness",
+    "severity": "minor",
+    "source": "PEP 8 and Pyflakes/Flake8 convention on unused imports",
+    "analyzer_check": "imported name never referenced",
+    "chunks": {
+      "rule": "Unused Import. Every imported module or name should actually be used somewhere in the file. Unused imports should be removed.",
+      "why_it_matters": "Unused Import. Unused imports add noise, can mislead readers into thinking a dependency is used when it is not, and in larger projects can slow down startup time or hide genuinely unused dependencies.",
+      "good_example": "Unused Import example. Only import what you use, and remove imports as soon as the code that needed them is deleted.",
+      "common_mistake": "Unused Import common mistake. Leaving imports behind after refactoring code that used to need them.",
+      "feedback_tone": "Unused Import feedback guidance. Keep this feedback brief and factual since it is a simple cleanup issue, not a design problem."
+    }
+  },
+  {
+    "rule_id": "bare_except",
+    "category": "correctness",
+    "severity": "major",
+    "source": "PEP 8 - bare except clauses should be avoided",
+    "analyzer_check": "except: with no exception type",
+    "chunks": {
+      "rule": "Bare Except Clause. An except clause with no specified exception type catches all exceptions, including ones you did not anticipate, such as KeyboardInterrupt or genuine bugs, silently hiding them.",
+      "why_it_matters": "Bare Except Clause. A bare except can mask real bugs, making them very hard to debug later since the program just silently continues instead of failing visibly. It is considered a significant anti-pattern in professional Python code.",
+      "good_example": "Bare Except Clause example. Catching a specific exception type, such as ZeroDivisionError, and handling it explicitly, is preferred over catching every possible exception silently.",
+      "common_mistake": "Bare Except Clause common mistake. Using a bare except with pass to make an error go away during debugging and forgetting to fix it properly afterward.",
+      "feedback_tone": "Bare Except Clause feedback guidance. Explain the risk concretely, describing what kind of bug this could hide, rather than just citing the rule."
+    }
+  },
+  {
+    "rule_id": "magic_number",
+    "category": "readability",
+    "severity": "minor",
+    "source": "Clean Code (Robert C. Martin) - avoid magic numbers",
+    "analyzer_check": "hardcoded numeric literal in comparison, excluding 0, 1, -1",
+    "chunks": {
+      "rule": "Magic Number. Hardcoded numeric literals used in conditions, such as comparing age to 65, should generally be replaced with a named constant explaining what the number represents.",
+      "why_it_matters": "Magic Number. A comparison like x greater than 42 gives no indication of why 42 is meaningful. A comparison like x greater than MAX_RETRIES is self explanatory and easier to update consistently if the value ever needs to change.",
+      "good_example": "Magic Number example. Defining a constant such as MAX_RETRIES equals 3, then comparing attempts to MAX_RETRIES instead of a bare number.",
+      "common_mistake": "Magic Number common mistake. Using the same magic number in multiple places, making it error prone to update consistently later.",
+      "feedback_tone": "Magic Number feedback guidance. Suggest a plausible constant name based on context if possible, not just an instruction to use a constant."
+    }
+  },
+  {
+    "rule_id": "unused_variable",
+    "category": "cleanliness",
+    "severity": "minor",
+    "source": "General code cleanliness convention, Pyflakes and Flake8",
+    "analyzer_check": "variable assigned but never read",
+    "chunks": {
+      "rule": "Unused Variable. A variable that is assigned a value but never used afterward is dead code and should be removed, or prefixed with an underscore if intentionally unused.",
+      "why_it_matters": "Unused Variable. Unused variables clutter the code and can indicate an incomplete thought, a leftover from debugging, or a genuine logic mistake, such as forgetting to return or use a computed value.",
+      "good_example": "Unused Variable example. Remove genuinely unused variables; if a value is intentionally discarded during unpacking, prefix it with an underscore to signal that intent clearly.",
+      "common_mistake": "Unused Variable common mistake. Computing an intermediate value for debugging purposes, similar to a print statement, and forgetting to remove the variable afterward.",
+      "feedback_tone": "Unused Variable feedback guidance. Ask whether the variable was meant to be used somewhere, such as in a return statement, since this is often a sign of an incomplete implementation, not just style."
+    }
+  },
+  {
+    "rule_id": "duplicate_function",
+    "category": "design",
+    "severity": "major",
+    "source": "DRY Principle, Don't Repeat Yourself, from The Pragmatic Programmer",
+    "analyzer_check": "two functions with structurally identical AST",
+    "chunks": {
+      "rule": "Duplicate Function Logic. Two functions with identical or near identical logic should be consolidated into one shared function, called from both places.",
+      "why_it_matters": "Duplicate Function Logic. Duplicated logic means any future bug fix or change has to be made in multiple places, and it is easy to forget one, causing inconsistent behavior over time.",
+      "good_example": "Duplicate Function Logic example. Extract the shared logic into one function and have both call sites use it, possibly with parameters for the small differences between them.",
+      "common_mistake": "Duplicate Function Logic common mistake. Copy pasting a function and renaming it slightly to reuse logic, instead of parameterizing the original function.",
+      "feedback_tone": "Duplicate Function Logic feedback guidance. Point out both function names and locations and suggest what the shared, consolidated version might look like."
+    }
+  }
+]
