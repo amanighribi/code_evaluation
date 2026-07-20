@@ -57,15 +57,15 @@ class CodeAnalyzer(ast.NodeVisitor):
         length = (node.end_lineno - node.lineno + 1) if hasattr(node, "end_lineno") else None
 
         if not has_docstring:
-            self.issues.append(f"Function '{node.name}' (line {node.lineno}) is missing a docstring.")
+            self.issues.append({"rule_id": "missing_docstring", "message": f"Function '{node.name}' (line {node.lineno}) is missing a docstring."})
         if num_params > 4:
-            self.issues.append(f"Function '{node.name}' (line {node.lineno}) has too many parameters ({num_params}).")
+            self.issues.append({"rule_id": "too_many_parameters", "message": f"Function '{node.name}' (line {node.lineno}) has too many parameters ({num_params})."})
         if complexity > 5:
-            self.issues.append(f"Function '{node.name}' (line {node.lineno}) has high cyclomatic complexity ({complexity}).")
+            self.issues.append({"rule_id": "high_cyclomatic_complexity", "message": f"Function '{node.name}' (line {node.lineno}) has high cyclomatic complexity ({complexity})."})
         if length and length > 30:
-            self.issues.append(f"Function '{node.name}' (line {node.lineno}) is too long ({length} lines).")
+            self.issues.append({"rule_id": "function_too_long", "message": f"Function '{node.name}' (line {node.lineno}) is too long ({length} lines)."})
         if not node.name.islower() or " " in node.name:
-            self.issues.append(f"Function '{node.name}' (line {node.lineno}) does not follow snake_case naming.")
+            self.issues.append({"rule_id": "naming_convention_violation", "message": f"Function '{node.name}' (line {node.lineno}) does not follow snake_case naming."})
 
     def _cyclomatic_complexity(self, node):
         complexity = 1
@@ -83,7 +83,7 @@ class CodeAnalyzer(ast.NodeVisitor):
             if isinstance(node, ast.ClassDef):
                 self.classes.append({"name": node.name, "line": node.lineno})
                 if not node.name[0].isupper():
-                    self.issues.append(f"Class '{node.name}' (line {node.lineno}) does not follow PascalCase naming.")
+                    self.issues.append({"rule_id": "naming_convention_violation", "message": f"Class '{node.name}' (line {node.lineno}) does not follow PascalCase naming."})
 
     # ---------- unused imports ----------
 
@@ -93,7 +93,7 @@ class CodeAnalyzer(ast.NodeVisitor):
 
         for name, line in imported_names.items():
             if name not in used_names:
-                self.issues.append(f"Import '{name}' (line {line}) is unused.")
+                self.issues.append({"rule_id": "unused_import", "message": f"Import '{name}' (line {line}) is unused."})
 
     def _collect_imported_names(self):
         imported_names = {}
@@ -116,7 +116,7 @@ class CodeAnalyzer(ast.NodeVisitor):
     def _check_bare_except(self):
         for node in ast.walk(self.tree):
             if isinstance(node, ast.ExceptHandler) and node.type is None:
-                self.issues.append(f"Bare 'except:' clause (line {node.lineno}) hides errors; specify an exception type.")
+                self.issues.append({"rule_id": "bare_except", "message": f"Bare 'except:' clause (line {node.lineno}) hides errors; specify an exception type."})
 
     # ---------- magic numbers ----------
 
@@ -128,9 +128,7 @@ class CodeAnalyzer(ast.NodeVisitor):
     def _flag_magic_numbers_in_compare(self, node, allowed):
         for comparator in node.comparators + [node.left]:
             if self._is_magic_number(comparator, allowed):
-                self.issues.append(
-                    f"Magic number {comparator.value} used in comparison (line {node.lineno}); consider a named constant."
-                )
+                self.issues.append({"rule_id": "magic_number", "message": f"Magic number {comparator.value} used in comparison (line {node.lineno}); consider a named constant."})
 
     def _is_magic_number(self, comparator, allowed):
         return (
@@ -150,7 +148,7 @@ class CodeAnalyzer(ast.NodeVisitor):
         assigned, used = self._collect_assigned_and_used(func_node)
         for name, line in assigned.items():
             if name not in used and not name.startswith("_"):
-                self.issues.append(f"Variable '{name}' (line {line}) in function '{func_node.name}' is assigned but never used.")
+                self.issues.append({"rule_id": "unused_variable", "message": f"Variable '{name}' (line {line}) in function '{func_node.name}' is assigned but never used."})
 
     def _collect_assigned_and_used(self, func_node):
         assigned = {}
@@ -174,9 +172,7 @@ class CodeAnalyzer(ast.NodeVisitor):
     def _check_duplicate(self, node, seen):
         fingerprint = self._fingerprint(node)
         if fingerprint in seen:
-            self.issues.append(
-                f"Function '{node.name}' (line {node.lineno}) appears to duplicate '{seen[fingerprint]}'."
-            )
+            self.issues.append({"rule_id": "duplicate_function", "message": f"Function '{node.name}' (line {node.lineno}) appears to duplicate '{seen[fingerprint]}'."})
         else:
             seen[fingerprint] = node.name
 

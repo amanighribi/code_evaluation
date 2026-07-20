@@ -1,16 +1,20 @@
 from static_analysis.analyzer import analyze_code
 
 
+def has_rule(issues, rule_id):
+    return any(issue["rule_id"] == rule_id for issue in issues)
+
+
 def test_detects_missing_docstring():
     code = "def foo():\n    return 1\n"
     result = analyze_code(code)
-    assert any("missing a docstring" in issue for issue in result["issues"])
+    assert has_rule(result["issues"], "missing_docstring")
 
 
 def test_detects_too_many_parameters():
     code = "def foo(a, b, c, d, e):\n    return a\n"
     result = analyze_code(code)
-    assert any("too many parameters" in issue for issue in result["issues"])
+    assert has_rule(result["issues"], "too_many_parameters")
 
 
 def test_detects_high_complexity():
@@ -26,13 +30,13 @@ def foo(x):
     return 0
 """
     result = analyze_code(code)
-    assert any("high cyclomatic complexity" in issue for issue in result["issues"])
+    assert has_rule(result["issues"], "high_cyclomatic_complexity")
 
 
 def test_detects_bad_class_naming():
     code = "class myclass:\n    pass\n"
     result = analyze_code(code)
-    assert any("PascalCase" in issue for issue in result["issues"])
+    assert has_rule(result["issues"], "naming_convention_violation")
 
 
 def test_clean_code_has_no_issues():
@@ -57,10 +61,11 @@ class Bar:
     assert result["num_functions"] == 2
     assert result["num_classes"] == 1
 
+
 def test_detects_unused_import():
     code = "import os\n\ndef foo():\n    return 1\n"
     result = analyze_code(code)
-    assert any("unused" in issue for issue in result["issues"])
+    assert has_rule(result["issues"], "unused_import")
 
 
 def test_detects_bare_except():
@@ -72,19 +77,19 @@ def foo():
         pass
 """
     result = analyze_code(code)
-    assert any("Bare 'except:'" in issue for issue in result["issues"])
+    assert has_rule(result["issues"], "bare_except")
 
 
 def test_detects_magic_number():
     code = "def foo(x):\n    if x > 42:\n        return True\n"
     result = analyze_code(code)
-    assert any("Magic number" in issue for issue in result["issues"])
+    assert has_rule(result["issues"], "magic_number")
 
 
 def test_detects_unused_variable():
     code = "def foo():\n    x = 5\n    return 1\n"
     result = analyze_code(code)
-    assert any("assigned but never used" in issue for issue in result["issues"])
+    assert has_rule(result["issues"], "unused_variable")
 
 
 def test_detects_duplicate_functions():
@@ -96,4 +101,4 @@ def bar(a, b):
     return a + b
 """
     result = analyze_code(code)
-    assert any("duplicate" in issue for issue in result["issues"])
+    assert has_rule(result["issues"], "duplicate_function")
