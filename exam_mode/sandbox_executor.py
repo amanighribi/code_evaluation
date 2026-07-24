@@ -20,7 +20,7 @@ def run_python_in_sandbox(code: str, stdin_input: str = "", timeout: int = DEFAU
         f.write(code)
 
     docker_cmd = [
-        "docker", "run", "--rm",
+        "docker", "run", "--rm", "-i",
         "--network", "none",
         "--memory", "128m",
         "--cpus", "0.5",
