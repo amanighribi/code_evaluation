@@ -1,14 +1,16 @@
-from fastapi import FastAPI, UploadFile, File, HTTPException
+from fastapi import FastAPI, UploadFile, File, Form, HTTPException
 import sys
 import os
+import json
 
 sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
 
 from static_analysis.analyzer import analyze_code
 from rag.retrieve import get_rubric_for_rule
 from llm.generate_feedback import generate_batch_feedback
+from exam_mode.full_exam_pipeline import run_full_exam_evaluation
 
-app = FastAPI(title="Code Evaluation API")
+app = FastAPI(title="Subject 9 - Code Evaluation API")
 
 
 @app.get("/")
@@ -50,5 +52,38 @@ async def analyze(file: UploadFile = File(...)):
         rule_id = issue["rule_id"]
         matches = feedback_by_rule_id.get(rule_id, [])
         issue["feedback"] = matches.pop(0) if matches else None
+
+    return result
+
+@app.post("/evaluate-exam")
+async def evaluate_exam(
+    code_file: UploadFile = File(...),
+    instructions_file: UploadFile = File(...),
+    language: str = Form(default="python"),
+):
+    code_content = await code_file.read()
+    instructions_content = await instructions_file.read()
+
+    try:
+        student_code = code_content.decode("utf-8")
+    except UnicodeDecodeError:
+        raise HTTPException(status_code=400, detail="Code file is not valid UTF-8 text.")
+
+    try:
+        instructions = instructions_content.decode("utf-8")
+    except UnicodeDecodeError:
+        raise HTTPException(status_code=400, detail="Instructions file is not valid UTF-8 text.")
+
+    if language not in ("python", "java"):
+        raise HTTPException(status_code=400, detail="language must be 'python' or 'java'.")
+
+    try:
+        result = run_full_exam_evaluation(
+            instructions=instructions,
+            student_code=student_code,
+            language=language,
+        )
+    except SyntaxError as e:
+        raise HTTPException(status_code=400, detail=f"Invalid {language} syntax: {e}")
 
     return result

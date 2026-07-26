@@ -16,25 +16,32 @@ def build_extraction_prompt(instructions: str) -> str:
 EXAM INSTRUCTIONS:
 {instructions}
 
-Your task: identify any explicitly banned functions, methods, or modules/imports mentioned in these instructions (e.g. "do not use sort()" means "sort" is banned).
+Your task has two parts:
 
-Only include names that are EXPLICITLY forbidden in the text. Do not guess or add anything not clearly stated. If nothing is explicitly banned, return an empty list.
+PART 1 - Banned names: identify any explicitly banned functions, methods, or modules/imports mentioned (e.g. "do not use sort()" means "sort" is banned). Only include names EXPLICITLY forbidden. Return bare identifier names only, WITHOUT parentheses (e.g. "sort", not "sort()"). If nothing is banned, return an empty list.
+
+PART 2 - Test cases: identify any example input/output pairs given in the instructions (e.g. "for example, given [5,2,4,1,3] the output should be [1,2,3,4,5]"). Convert each example into a stdin/stdout format matching how the program is expected to read input and print output, based on the instructions (e.g. if the program should read a count n then n integers on separate lines, format the input that way). If no explicit examples are given, return an empty list. Do not invent test cases that are not implied by the instructions.
 
 Respond ONLY with a valid JSON object, no other text before or after it, in this exact format:
-{{"banned_names": ["name1", "name2"]}}
+{{
+  "banned_names": ["name1", "name2"],
+  "test_cases": [
+    {{"input": "5\\n5 2 4 1 3", "expected_output": "1 2 3 4 5"}}
+  ]
+}}
 
-If there are no banned names, respond with:
-{{"banned_names": []}}"""
+If there are no banned names or no test cases, use empty lists for those fields."""
 
 
-def extract_banned_names(instructions: str) -> list[str]:
+def extract_exam_metadata(instructions: str) -> dict:
+    """Returns {"banned_names": [...], "test_cases": [...]} extracted from free-text exam instructions."""
     prompt = build_extraction_prompt(instructions)
 
     response = client.chat.completions.create(
         model=MODEL,
         messages=[{"role": "user", "content": prompt}],
         temperature=0.0,
-        max_tokens=300,
+        max_tokens=800,
     )
 
     raw_text = response.choices[0].message.content.strip()
@@ -47,19 +54,30 @@ def extract_banned_names(instructions: str) -> list[str]:
 
     try:
         parsed = json.loads(raw_text)
-        return parsed.get("banned_names", [])
+        return {
+            "banned_names": parsed.get("banned_names", []),
+            "test_cases": parsed.get("test_cases", []),
+        }
     except json.JSONDecodeError:
-        print(f"Warning: could not parse constraint extraction response: {raw_text[:200]}")
-        return []
+        print(f"Warning: could not parse extraction response: {raw_text[:200]}")
+        return {"banned_names": [], "test_cases": []}
+
+
+# Kept for backward compatibility with any existing code calling the old function name
+def extract_banned_names(instructions: str) -> list:
+    return extract_exam_metadata(instructions)["banned_names"]
 
 
 if __name__ == "__main__":
     test_instructions = """
-    Write a function bubble_sort(arr) that sorts a list of integers in ascending order
-    using the bubble sort algorithm. You must implement the sorting logic manually.
-    Do not use Python's built-in sort() or sorted() functions, and do not use any
-    external sorting libraries such as itertools.
+    Write a program that reads an integer n, then a list of n integers, and prints
+    them sorted in ascending order using the bubble sort algorithm. Do not use
+    Python's built-in sort() or sorted() functions.
+
+    For example, given n=5 and the list [5, 2, 4, 1, 3], the output should be:
+    1 2 3 4 5
     """
 
-    banned = extract_banned_names(test_instructions)
-    print("Extracted banned names:", banned)
+    metadata = extract_exam_metadata(test_instructions)
+    print("Banned names:", metadata["banned_names"])
+    print("Test cases:", metadata["test_cases"])
