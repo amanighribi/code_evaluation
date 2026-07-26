@@ -19,8 +19,8 @@ def root():
 
 
 @app.post("/analyze")
-async def analyze(file: UploadFile = File(...)):
-    content = await file.read()
+def analyze(file: UploadFile = File(...)):
+    content = file.file.read()
 
     try:
         source_code = content.decode("utf-8")
@@ -56,13 +56,13 @@ async def analyze(file: UploadFile = File(...)):
     return result
 
 @app.post("/evaluate-exam")
-async def evaluate_exam(
+def evaluate_exam(
     code_file: UploadFile = File(...),
     instructions_file: UploadFile = File(...),
     language: str = Form(default="python"),
 ):
-    code_content = await code_file.read()
-    instructions_content = await instructions_file.read()
+    code_content = code_file.file.read()
+    instructions_content = instructions_file.file.read()
 
     try:
         student_code = code_content.decode("utf-8")

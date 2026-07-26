@@ -1,7 +1,7 @@
 from exam_mode.sandbox_executor import run_python_in_sandbox
 
 
-def run_test_cases(code: str, test_cases: list, timeout: int = 5) -> list:
+def run_test_cases(code: str, test_cases: list, timeout: int = 20) -> list:
     """test_cases: list of {"input": "...", "expected_output": "..."}
     Runs the student's code once per test case, feeding stdin and comparing stdout.
     Returns a list of result dicts."""

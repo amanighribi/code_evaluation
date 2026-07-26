@@ -2,6 +2,7 @@ import subprocess
 import tempfile
 import os
 import uuid
+import sys
 
 DOCKER_IMAGE = "python:3.11-slim"
 DEFAULT_TIMEOUT = 5  # seconds, hard limit for the whole docker run
@@ -38,6 +39,8 @@ def run_python_in_sandbox(code: str, stdin_input: str = "", timeout: int = DEFAU
         "error": None,
     }
 
+    creation_flags = subprocess.CREATE_NEW_PROCESS_GROUP if sys.platform == "win32" else 0
+
     try:
         proc = subprocess.run(
             docker_cmd,
@@ -45,6 +48,7 @@ def run_python_in_sandbox(code: str, stdin_input: str = "", timeout: int = DEFAU
             capture_output=True,
             text=True,
             timeout=timeout,
+            creationflags=creation_flags,
         )
         result["stdout"] = proc.stdout
         result["stderr"] = proc.stderr
