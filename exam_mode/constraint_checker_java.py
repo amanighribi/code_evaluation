@@ -18,12 +18,20 @@ def check_constraints_java(source_code: str, banned_names: list[str]) -> list[di
 
     # Method invocations, e.g. Collections.sort(list) or list.sort()
     for path, node in tree.filter(javalang.tree.MethodInvocation):
+        qualified_name = f"{node.qualifier}.{node.member}" if node.qualifier else node.member
+        matched_name = None
+
         if node.member in banned_set:
+            matched_name = node.member
+        elif qualified_name in banned_set:
+            matched_name = qualified_name
+
+        if matched_name:
             violations.append({
                 "type": "banned_call",
-                "name": node.member,
+                "name": matched_name,
                 "line": node.position.line if node.position else None,
-                "message": f"Use of banned method '{node.member}' at line {node.position.line if node.position else '?'}.",
+                "message": f"Use of banned method '{matched_name}' at line {node.position.line if node.position else '?'}.",
             })
 
     # Imports, e.g. import java.util.Collections;

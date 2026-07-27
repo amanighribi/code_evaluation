@@ -20,7 +20,7 @@ def run_full_exam_evaluation(instructions: str, student_code: str, language: str
     test_results = []
     if test_cases:
         print("Step 3: Running test cases in sandbox...")
-        test_results = run_test_cases(student_code, test_cases)
+        test_results = run_test_cases(student_code, test_cases, language=language)
         summary = summarize_results(test_results)
         print(f"  {summary['passed']}/{summary['total']} passed")
     else:
