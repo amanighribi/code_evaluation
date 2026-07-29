@@ -45,9 +45,13 @@ def build_evaluation_prompt(instructions, student_code, constraint_violations, t
         "2. Does the approach match what was required (e.g. was a specific algorithm genuinely implemented, or circumvented using a banned shortcut)?\n"
         "3. If tests failed, what does the error suggest about the bug?\n"
         "4. Overall assessment and constructive feedback for the student.\n\n"
+        "Also propose a numeric grade out of 20, following typical French academic grading conventions, "
+        "reflecting both correctness (based on real test results, not assumptions) and whether the required "
+        "approach was genuinely followed (e.g. a correct answer obtained via a banned shortcut should be "
+        "graded significantly lower than a genuine, correct implementation of the required approach).\n\n"
         "Respond ONLY with a valid JSON object, no other text before or after it, in this exact format:\n"
-        '{"meets_requirements": "yes" | "partially" | "no", "approach_assessment": "...", '
-        '"correctness_notes": "...", "feedback": "..."}'
+        '{"meets_requirements": "yes" | "partially" | "no", "grade_out_of_20": 0-20, '
+        '"approach_assessment": "...", "correctness_notes": "...", "feedback": "..."}'
     )
 
     return prompt
@@ -75,10 +79,15 @@ def evaluate_submission(instructions, student_code, constraint_violations=None, 
         raw_text = raw_text.strip()
 
     try:
-        return json.loads(raw_text)
+        parsed = json.loads(raw_text)
+        grade = parsed.get("grade_out_of_20")
+        if not isinstance(grade, (int, float)) or not (0 <= grade <= 20):
+            parsed["grade_out_of_20"] = None  # invalid/out-of-range grade is safer than a wrong number
+        return parsed
     except json.JSONDecodeError:
         return {
             "meets_requirements": "unknown",
+            "grade_out_of_20": None,
             "approach_assessment": "",
             "correctness_notes": "",
             "feedback": "Could not parse evaluation response: " + raw_text[:300],
