@@ -38,6 +38,22 @@ public class Infinite {
         while (true) {}
     }
 }
+
+
 """
     result = run_java_in_sandbox(code, timeout=8)
     assert result["timed_out"] is True
+
+
+@pytest.mark.docker
+def test_handles_non_public_class():
+    code = """
+class Solution {
+    public static void main(String[] args) {
+        System.out.println("works without public modifier");
+    }
+}
+"""
+    result = run_java_in_sandbox(code, timeout=25)
+    assert result["stdout"].strip() == "works without public modifier"
+    assert result["compile_error"] is None

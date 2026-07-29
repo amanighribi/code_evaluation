@@ -23,11 +23,14 @@ def run_test_cases(code: str, test_cases: list, language: str = "python", timeou
             raise ValueError(f"Unsupported language: {language}")
 
         actual = exec_result["stdout"].strip()
+        infra_error = exec_result.get("error")  # e.g. "Docker not available", distinct from student code bugs
+
         passed = (
             actual == expected
             and not exec_result["timed_out"]
             and exec_result["exit_code"] == 0
             and not compile_error
+            and not infra_error
         )
 
         results.append({
@@ -40,8 +43,8 @@ def run_test_cases(code: str, test_cases: list, language: str = "python", timeou
             "exit_code": exec_result["exit_code"],
             "stderr": exec_result["stderr"],
             "compile_error": compile_error,
+            "infra_error": infra_error,
         })
-
     return results
 
 

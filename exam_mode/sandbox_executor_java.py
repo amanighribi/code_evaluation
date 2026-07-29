@@ -9,8 +9,17 @@ DEFAULT_TIMEOUT = 20  # seconds; covers compile + run, plus Docker cold start
 
 
 def _extract_public_class_name(code: str) -> str:
-    match = re.search(r"public\s+class\s+(\w+)", code)
-    return match.group(1) if match else "Main"
+    # Prefer an explicitly public class, since Java requires the filename to match it.
+    public_match = re.search(r"public\s+class\s+(\w+)", code)
+    if public_match:
+        return public_match.group(1)
+
+    # Fall back to the first top-level class declaration, public or not.
+    any_class_match = re.search(r"\bclass\s+(\w+)", code)
+    if any_class_match:
+        return any_class_match.group(1)
+
+    return "Main"
 
 
 def run_java_in_sandbox(code: str, stdin_input: str = "", timeout: int = DEFAULT_TIMEOUT) -> dict:

@@ -20,10 +20,15 @@ def build_evaluation_prompt(instructions, student_code, constraint_violations, t
         total = len(test_results)
         tests_text = f"{passed}/{total} test cases passed.\n"
         for r in test_results:
+            if r.get("infra_error"):
+                tests_text += f"- Test {r['test_number']}: COULD NOT RUN (infrastructure issue, not a code problem: {r['infra_error']}) - do not penalize the student for this.\n"
+                continue
             status = "PASS" if r["passed"] else "FAIL"
             tests_text += f"- Test {r['test_number']}: {status} (input: {r['input']!r}, expected: {r['expected_output']!r}, got: {r['actual_output']!r})\n"
             if r.get("stderr"):
                 tests_text += f"  Error: {r['stderr'][:200]}\n"
+            if r.get("compile_error"):
+                tests_text += f"  Compile error: {r['compile_error'][:200]}\n"
     else:
         tests_text = "No test cases were executed for this submission."
 
