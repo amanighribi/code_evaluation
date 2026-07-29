@@ -1,0 +1,6 @@
+Write a Java program that reads an integer n, then n integers, and prints them
+sorted in ascending order using the bubble sort algorithm. Do not use
+Collections.sort() or Arrays.sort().
+
+For example, given n=5 and the list 5 2 4 1 3, the output should be:
+1 2 3 4 5
