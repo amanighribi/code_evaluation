@@ -3,12 +3,14 @@ import sys
 import os
 import json
 
+
 sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
 
 from static_analysis.analyzer import analyze_code
 from rag.retrieve import get_rubric_for_rule
 from llm.generate_feedback import generate_batch_feedback
 from exam_mode.full_exam_pipeline import run_full_exam_evaluation
+from exam_mode.language_check import check_language_matches
 
 app = FastAPI(title="Subject 9 - Code Evaluation API")
 
@@ -76,6 +78,10 @@ def evaluate_exam(
 
     if language not in ("python", "java"):
         raise HTTPException(status_code=400, detail="language must be 'python' or 'java'.")
+    language_warning = check_language_matches(student_code, language)
+    if language_warning:
+        raise HTTPException(status_code=400, detail=language_warning)
+
 
     try:
         result = run_full_exam_evaluation(
