@@ -70,6 +70,54 @@ def run_python_in_sandbox(code: str, stdin_input: str = "", timeout: int = DEFAU
 
     return result
 
+def run_python_project_in_sandbox(project_dir: str, entry_point: str, stdin_input: str = "", timeout: int = DEFAULT_TIMEOUT) -> dict:
+    """Runs a multi-file Python project inside an isolated Docker container.
+    project_dir: path to the already-extracted project on disk.
+    entry_point: path to the file to run, relative to project_dir (e.g. 'main.py')."""
+
+    docker_cmd = [
+        "docker", "run", "--rm", "-i",
+        "--network", "none",
+        "--memory", "128m",
+        "--cpus", "0.5",
+        "-v", f"{project_dir}:/sandbox:ro",
+        "--workdir", "/sandbox",
+        DOCKER_IMAGE,
+        "python", entry_point.replace("\\", "/"),
+    ]
+
+    result = {
+        "stdout": "",
+        "stderr": "",
+        "exit_code": None,
+        "timed_out": False,
+        "error": None,
+    }
+
+    creation_flags = subprocess.CREATE_NEW_PROCESS_GROUP if sys.platform == "win32" else 0
+
+    try:
+        proc = subprocess.run(
+            docker_cmd,
+            input=stdin_input,
+            capture_output=True,
+            text=True,
+            timeout=timeout,
+            creationflags=creation_flags,
+        )
+        result["stdout"] = proc.stdout
+        result["stderr"] = proc.stderr
+        result["exit_code"] = proc.returncode
+
+    except subprocess.TimeoutExpired:
+        result["timed_out"] = True
+        result["error"] = f"Execution exceeded {timeout} second timeout."
+
+    except FileNotFoundError:
+        result["error"] = "Docker is not installed or not available on PATH."
+
+    return result
+
 
 if __name__ == "__main__":
     print("=== Test 1: normal working code ===")
