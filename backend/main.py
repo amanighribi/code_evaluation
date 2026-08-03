@@ -11,6 +11,8 @@ from rag.retrieve import get_rubric_for_rule
 from llm.generate_feedback import generate_batch_feedback
 from exam_mode.full_exam_pipeline import run_full_exam_evaluation
 from exam_mode.language_check import check_language_matches
+from project_utils.zip_extractor import extract_zip_safely, cleanup_project_dir, UnsafeZipError
+from static_analysis.analyze_project import analyze_project
 
 app = FastAPI(title="Subject 9 - Code Evaluation API")
 
@@ -23,40 +25,91 @@ def root():
 @app.post("/analyze")
 def analyze(file: UploadFile = File(...)):
     content = file.file.read()
+    filename = file.filename or ""
+    
 
-    try:
-        source_code = content.decode("utf-8")
-    except UnicodeDecodeError:
-        raise HTTPException(status_code=400, detail="File is not valid UTF-8 text.")
 
-    try:
-        result = analyze_code(source_code)
-    except SyntaxError as e:
-        raise HTTPException(status_code=400, detail=f"Invalid Python syntax: {e}")
+    if filename.lower().endswith(".zip"):
+        try:
+            project_dir = extract_zip_safely(content)
+        except UnsafeZipError as e:
+            raise HTTPException(status_code=400, detail=f"Unsafe or invalid zip file: {e}")
 
-    issues_with_rubrics = []
-    for issue in result["issues"]:
-        rule_id = issue["rule_id"]
-        rubric = get_rubric_for_rule(rule_id)
-        issues_with_rubrics.append({
-            "rule_id": rule_id,
-            "issue": issue["message"],
-            "rubric": rubric,
-        })
+        try:
+            report = analyze_project(project_dir)
 
-    feedback_list = generate_batch_feedback(issues_with_rubrics, source_code)
+            for rel_path, file_result in report["per_file"].items():
+                if not file_result["issues"]:
+                    continue
 
-    feedback_by_rule_id = {}
-    for entry in feedback_list:
-        feedback_by_rule_id.setdefault(entry.get("rule_id"), []).append(entry.get("feedback"))
+                full_path = os.path.join(project_dir, rel_path)
+                with open(full_path, "r", encoding="utf-8", errors="replace") as f:
+                    file_source = f.read()
 
-    for issue in result["issues"]:
-        rule_id = issue["rule_id"]
-        matches = feedback_by_rule_id.get(rule_id, [])
-        issue["feedback"] = matches.pop(0) if matches else None
+                issues_with_rubrics = []
+                for issue in file_result["issues"]:
+                    rubric = get_rubric_for_rule(issue["rule_id"])
+                    issues_with_rubrics.append({
+                        "rule_id": issue["rule_id"],
+                        "issue": issue["message"],
+                        "rubric": rubric,
+                    })
 
-    return result
+                feedback_list = generate_batch_feedback(issues_with_rubrics, file_source)
 
+                feedback_by_rule_id = {}
+                for entry in feedback_list:
+                    feedback_by_rule_id.setdefault(entry.get("rule_id"), []).append(entry.get("feedback"))
+
+                for issue in file_result["issues"]:
+                    matches = feedback_by_rule_id.get(issue["rule_id"], [])
+                    issue["feedback"] = matches.pop(0) if matches else None
+
+            # keep the flat "issues" list in sync with the per-file feedback we just added
+            for issue in report["issues"]:
+                file_issues = report["per_file"][issue["file"]]["issues"]
+                match = next((fi for fi in file_issues if fi["rule_id"] == issue["rule_id"] and fi["message"] == issue["message"]), None)
+                if match:
+                    issue["feedback"] = match.get("feedback")
+
+            return report
+
+        finally:
+            cleanup_project_dir(project_dir)
+
+    else:
+        try:
+            source_code = content.decode("utf-8")
+        except UnicodeDecodeError:
+            raise HTTPException(status_code=400, detail="File is not valid UTF-8 text.")
+
+        try:
+            result = analyze_code(source_code)
+        except SyntaxError as e:
+            raise HTTPException(status_code=400, detail=f"Invalid Python syntax: {e}")
+
+        issues_with_rubrics = []
+        for issue in result["issues"]:
+            rule_id = issue["rule_id"]
+            rubric = get_rubric_for_rule(rule_id)
+            issues_with_rubrics.append({
+                "rule_id": rule_id,
+                "issue": issue["message"],
+                "rubric": rubric,
+            })
+
+        feedback_list = generate_batch_feedback(issues_with_rubrics, source_code)
+
+        feedback_by_rule_id = {}
+        for entry in feedback_list:
+            feedback_by_rule_id.setdefault(entry.get("rule_id"), []).append(entry.get("feedback"))
+
+        for issue in result["issues"]:
+            rule_id = issue["rule_id"]
+            matches = feedback_by_rule_id.get(rule_id, [])
+            issue["feedback"] = matches.pop(0) if matches else None
+
+        return result
 @app.post("/evaluate-exam")
 def evaluate_exam(
     code_file: UploadFile = File(...),
