@@ -143,3 +143,66 @@ public class Infinite {
 }
 """
     print(run_java_in_sandbox(code3, timeout=8))
+
+def run_java_project_in_sandbox(project_dir: str, entry_point: str, stdin_input: str = "", timeout: int = DEFAULT_TIMEOUT) -> dict:
+    """Compiles and runs a multi-file Java project inside an isolated Docker container.
+    project_dir: path to the already-extracted project on disk (must be writable, not read-only).
+    entry_point: path to the .java file to run, relative to project_dir (e.g. 'Main.java')."""
+
+    class_name = os.path.splitext(os.path.basename(entry_point))[0]
+
+    inner_cmd = f"javac *.java 2> compile_errors.txt && java {class_name}; echo COMPILE_STATUS:$?"
+
+    docker_cmd = [
+        "docker", "run", "--rm", "-i",
+        "--network", "none",
+        "--memory", "256m",
+        "--cpus", "0.5",
+        "-v", f"{project_dir}:/sandbox",
+        "--workdir", "/sandbox",
+        DOCKER_IMAGE,
+        "sh", "-c", inner_cmd,
+    ]
+
+    result = {
+        "stdout": "",
+        "stderr": "",
+        "exit_code": None,
+        "timed_out": False,
+        "compile_error": None,
+        "error": None,
+    }
+
+    creation_flags = subprocess.CREATE_NEW_PROCESS_GROUP if sys.platform == "win32" else 0
+
+    try:
+        proc = subprocess.run(
+            docker_cmd,
+            input=stdin_input,
+            capture_output=True,
+            text=True,
+            timeout=timeout,
+            creationflags=creation_flags,
+        )
+        raw_stdout = proc.stdout
+        if "COMPILE_STATUS:" in raw_stdout:
+            raw_stdout = raw_stdout.split("COMPILE_STATUS:")[0]
+        result["stdout"] = raw_stdout
+        result["stderr"] = proc.stderr
+        result["exit_code"] = proc.returncode
+
+        compile_errors_path = os.path.join(project_dir, "compile_errors.txt")
+        if os.path.exists(compile_errors_path):
+            with open(compile_errors_path, "r", encoding="utf-8", errors="replace") as f:
+                compile_err_text = f.read().strip()
+            if compile_err_text:
+                result["compile_error"] = compile_err_text
+
+    except subprocess.TimeoutExpired:
+        result["timed_out"] = True
+        result["error"] = f"Execution exceeded {timeout} second timeout."
+
+    except FileNotFoundError:
+        result["error"] = "Docker is not installed or not available on PATH."
+
+    return result

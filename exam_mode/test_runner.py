@@ -69,3 +69,47 @@ def summarize_results(results: list) -> dict:
         "failed": total - passed,
         "pass_rate": round(passed / total, 2) if total else 0,
     }
+
+from exam_mode.sandbox_executor import run_python_project_in_sandbox
+
+
+def run_test_cases_project(project_dir: str, entry_point: str, test_cases: list, language: str = "python", timeout: int = 20) -> list:
+    """Same as run_test_cases, but runs a multi-file project with a specified entry point
+    instead of a single inline code string. Currently supports Python only."""
+
+    if language != "python":
+        raise ValueError(f"Multi-file project execution currently only supports Python, got: {language}")
+
+    results = []
+
+    for i, case in enumerate(test_cases, start=1):
+        test_input = case.get("input", "")
+        expected = case.get("expected_output", "").strip()
+
+        exec_result = run_python_project_in_sandbox(project_dir, entry_point, stdin_input=test_input, timeout=timeout)
+
+        actual = exec_result["stdout"].strip()
+        infra_error = exec_result.get("error")
+        outputs_match = normalize_output(actual) == normalize_output(expected)
+
+        passed = (
+            outputs_match
+            and not exec_result["timed_out"]
+            and exec_result["exit_code"] == 0
+            and not infra_error
+        )
+
+        results.append({
+            "test_number": i,
+            "input": test_input,
+            "expected_output": expected,
+            "actual_output": actual,
+            "passed": passed,
+            "timed_out": exec_result["timed_out"],
+            "exit_code": exec_result["exit_code"],
+            "stderr": exec_result["stderr"],
+            "compile_error": None,
+            "infra_error": infra_error,
+        })
+
+    return results
