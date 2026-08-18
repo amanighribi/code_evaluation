@@ -7,7 +7,7 @@ load_dotenv()
 
 client = Groq(api_key=os.environ.get("GROQ_API_KEY"))
 
-MODEL = "llama-3.3-70b-versatile"
+MODEL = "openai/gpt-oss-120b"
 
 
 def build_evaluation_prompt(instructions, student_code, constraint_violations, test_results):
