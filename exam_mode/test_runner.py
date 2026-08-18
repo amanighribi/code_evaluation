@@ -73,12 +73,13 @@ def summarize_results(results: list) -> dict:
 from exam_mode.sandbox_executor import run_python_project_in_sandbox
 
 
+from exam_mode.sandbox_executor import run_python_project_in_sandbox
+from exam_mode.sandbox_executor_java import run_java_project_in_sandbox
+
+
 def run_test_cases_project(project_dir: str, entry_point: str, test_cases: list, language: str = "python", timeout: int = 20) -> list:
     """Same as run_test_cases, but runs a multi-file project with a specified entry point
-    instead of a single inline code string. Currently supports Python only."""
-
-    if language != "python":
-        raise ValueError(f"Multi-file project execution currently only supports Python, got: {language}")
+    instead of a single inline code string. Supports both Python and Java."""
 
     results = []
 
@@ -86,7 +87,14 @@ def run_test_cases_project(project_dir: str, entry_point: str, test_cases: list,
         test_input = case.get("input", "")
         expected = case.get("expected_output", "").strip()
 
-        exec_result = run_python_project_in_sandbox(project_dir, entry_point, stdin_input=test_input, timeout=timeout)
+        if language == "python":
+            exec_result = run_python_project_in_sandbox(project_dir, entry_point, stdin_input=test_input, timeout=timeout)
+            compile_error = None
+        elif language == "java":
+            exec_result = run_java_project_in_sandbox(project_dir, entry_point, stdin_input=test_input, timeout=timeout)
+            compile_error = exec_result.get("compile_error")
+        else:
+            raise ValueError(f"Unsupported language: {language}")
 
         actual = exec_result["stdout"].strip()
         infra_error = exec_result.get("error")
@@ -96,6 +104,7 @@ def run_test_cases_project(project_dir: str, entry_point: str, test_cases: list,
             outputs_match
             and not exec_result["timed_out"]
             and exec_result["exit_code"] == 0
+            and not compile_error
             and not infra_error
         )
 
@@ -108,7 +117,7 @@ def run_test_cases_project(project_dir: str, entry_point: str, test_cases: list,
             "timed_out": exec_result["timed_out"],
             "exit_code": exec_result["exit_code"],
             "stderr": exec_result["stderr"],
-            "compile_error": None,
+            "compile_error": compile_error,
             "infra_error": infra_error,
         })
 

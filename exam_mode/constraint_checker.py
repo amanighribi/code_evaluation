@@ -1,4 +1,5 @@
 import ast
+import os
 from exam_mode.constraint_checker_java import check_constraints_java
 
 
@@ -89,3 +90,30 @@ def another_approach(data):
     violations = check_constraints(test_code, banned_names=["sort", "sorted", "itertools"])
     for v in violations:
         print(v)
+from project_utils.zip_extractor import find_code_files
+
+
+def check_constraints_project(project_dir: str, banned_names: list, language: str) -> list:
+    """Scans every source file in the project (not just the entry point) for constraint
+    violations, since a student could hide a banned call/import in any file."""
+
+    extension = ".py" if language == "python" else ".java"
+    code_files = find_code_files(project_dir, extension)
+
+    all_violations = []
+    for rel_path in code_files:
+        full_path = os.path.join(project_dir, rel_path)
+        with open(full_path, "r", encoding="utf-8", errors="replace") as f:
+            source_code = f.read()
+
+        try:
+            violations = check_constraints_multilang(source_code, banned_names, language=language)
+        except SyntaxError:
+            continue  # a broken file will already surface as a compile/parse error elsewhere
+
+        for v in violations:
+            v_with_file = dict(v)
+            v_with_file["file"] = rel_path
+            all_violations.append(v_with_file)
+
+    return all_violations
