@@ -1,0 +1,4 @@
+Write a program with two files: main.py should read two integers separated by a space
+and print their sum, computed by a function in helper.py. Do not use eval() anywhere.
+
+For example, given the input 3 4, the output should be: 7

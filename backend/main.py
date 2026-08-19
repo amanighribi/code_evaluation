@@ -11,6 +11,8 @@ from rag.retrieve import get_rubric_for_rule
 from llm.generate_feedback import generate_batch_feedback
 from exam_mode.full_exam_pipeline import run_full_exam_evaluation
 from exam_mode.language_check import check_language_matches
+from exam_mode.full_exam_pipeline import run_full_exam_evaluation, run_full_exam_evaluation_project
+from exam_mode.entry_point_resolver import EntryPointError
 from project_utils.zip_extractor import extract_zip_safely, cleanup_project_dir, UnsafeZipError
 from static_analysis.analyze_project import analyze_project
 
@@ -115,14 +117,11 @@ def evaluate_exam(
     code_file: UploadFile = File(...),
     instructions_file: UploadFile = File(...),
     language: str = Form(default="python"),
+    entry_point: str = Form(default=None),
 ):
     code_content = code_file.file.read()
     instructions_content = instructions_file.file.read()
-
-    try:
-        student_code = code_content.decode("utf-8")
-    except UnicodeDecodeError:
-        raise HTTPException(status_code=400, detail="Code file is not valid UTF-8 text.")
+    code_filename = code_file.filename or ""
 
     try:
         instructions = instructions_content.decode("utf-8")
@@ -131,18 +130,43 @@ def evaluate_exam(
 
     if language not in ("python", "java"):
         raise HTTPException(status_code=400, detail="language must be 'python' or 'java'.")
-    language_warning = check_language_matches(student_code, language)
-    if language_warning:
-        raise HTTPException(status_code=400, detail=language_warning)
 
+    if code_filename.lower().endswith(".zip"):
+        try:
+            project_dir = extract_zip_safely(code_content)
+        except UnsafeZipError as e:
+            raise HTTPException(status_code=400, detail=f"Unsafe or invalid zip file: {e}")
 
-    try:
-        result = run_full_exam_evaluation(
-            instructions=instructions,
-            student_code=student_code,
-            language=language,
-        )
-    except SyntaxError as e:
-        raise HTTPException(status_code=400, detail=f"Invalid {language} syntax: {e}")
+        try:
+            result = run_full_exam_evaluation_project(
+                instructions=instructions,
+                project_dir=project_dir,
+                language=language,
+                requested_entry_point=entry_point,
+            )
+            if "error" in result:
+                raise HTTPException(status_code=400, detail=result["error"])
+            return result
+        finally:
+            cleanup_project_dir(project_dir)
 
-    return result
+    else:
+        try:
+            student_code = code_content.decode("utf-8")
+        except UnicodeDecodeError:
+            raise HTTPException(status_code=400, detail="Code file is not valid UTF-8 text.")
+
+        language_warning = check_language_matches(student_code, language)
+        if language_warning:
+            raise HTTPException(status_code=400, detail=language_warning)
+
+        try:
+            result = run_full_exam_evaluation(
+                instructions=instructions,
+                student_code=student_code,
+                language=language,
+            )
+        except SyntaxError as e:
+            raise HTTPException(status_code=400, detail=f"Invalid {language} syntax: {e}")
+
+        return result
