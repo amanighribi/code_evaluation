@@ -40,17 +40,29 @@ See `docs/` (or Chapters 1–2 of the internship report) for full architectural 
 
 ## Project structure
 code-eval/
+
 ├── backend/ # FastAPI app (main.py)
+
 ├── static_analysis/ # ast analyzer, project-wide aggregation
+
 ├── rag/ # embeddings ingestion & retrieval
+
 ├── llm/ # generic feedback generation
+
 ├── exam_mode/ # constraint extraction/checking, sandbox executors, evaluation
+
 ├── project_utils/ # safe zip extraction
+
 ├── knowledge_base/ # rubrics.json — the pedagogical knowledge base
+
 ├── samples/ # example files for testing
+
 ├── tests/ # pytest suite (fast / docker / llm marked)
+
 ├── requirements.txt
+
 ├── Dockerfile
+
 └── run_dev_server.py # dev server launcher (correct reload-dir scoping)
 
 
