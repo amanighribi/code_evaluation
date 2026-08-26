@@ -25,7 +25,7 @@ async function parseJsonOrThrow<T>(res: Response): Promise<T> {
 
 export async function checkBackendHealth(): Promise<boolean> {
   try {
-    const res = await fetch(`${API_BASE}/`, { method: 'GET' });
+    const res = await fetch(`${API_BASE}/`, { method: 'GET',headers: { 'ngrok-skip-browser-warning': 'true' }, });
     return res.ok;
   } catch {
     return false;
@@ -38,7 +38,7 @@ export async function analyzeCode(file: File): Promise<AnalyzeResponse> {
 
   let res: Response;
   try {
-    res = await fetch(`${API_BASE}/analyze`, { method: 'POST', body: formData });
+    res = await fetch(`${API_BASE}/analyze`, { method: 'POST', body: formData,headers: { 'ngrok-skip-browser-warning': 'true' }, });
   } catch {
     throw new ApiRequestError(`Could not reach the backend at ${API_BASE}. Is the server running?`);
   }
@@ -63,7 +63,7 @@ export async function evaluateExam(params: EvaluateExamParams): Promise<ExamEval
 
   let res: Response;
   try {
-    res = await fetch(`${API_BASE}/evaluate-exam`, { method: 'POST', body: formData });
+    res = await fetch(`${API_BASE}/evaluate-exam`, { method: 'POST', body: formData,headers: { 'ngrok-skip-browser-warning': 'true' }, });
   } catch {
     throw new ApiRequestError(`Could not reach the backend at ${API_BASE}. Is the server running?`);
   }
