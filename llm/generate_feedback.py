@@ -36,14 +36,15 @@ STUDENT'S CODE:
 DETECTED ISSUES:
 {issues_block}
 
-For EACH issue above, write a short, specific feedback comment (2-4 sentences), grounded in the rule and rationale provided, referencing the actual code where relevant. Do not simply restate the rule.
+For EACH issue above, provide two things:
+1. "feedback": a short, specific explanation (2-4 sentences), grounded in the rule and rationale provided, referencing the actual code where relevant. Do not simply restate the rule.
+2. "suggested_fix": a short, concrete corrected code snippet showing specifically how to fix THIS issue in THIS code (not a generic example). Keep it minimal — just the relevant lines, not the whole file. If a full working snippet isn't meaningful for this issue (e.g. a purely conceptual note), use an empty string.
 
 Respond ONLY with a valid JSON array, with no other text before or after it, in this exact format:
 [
-  {{"rule_id": "...", "feedback": "..."}},
-  {{"rule_id": "...", "feedback": "..."}}
+  {{"rule_id": "...", "feedback": "...", "suggested_fix": "..."}},
+  {{"rule_id": "...", "feedback": "...", "suggested_fix": "..."}}
 ]
-
 There must be exactly {len(issues_with_rubrics)} entries in the array, one per issue, in the same order as listed above."""
 
     return prompt
@@ -61,7 +62,7 @@ def generate_batch_feedback(issues_with_rubrics: list, code: str) -> list:
         model=MODEL,
         messages=[{"role": "user", "content": prompt}],
         temperature=0.4,
-        max_tokens=2000,
+        max_tokens=4000,
     )
 
     raw_text = response.choices[0].message.content.strip()
@@ -76,8 +77,8 @@ def generate_batch_feedback(issues_with_rubrics: list, code: str) -> list:
     try:
         feedback_list = json.loads(raw_text)
     except json.JSONDecodeError:
-        # Fallback: return the raw text as a single error entry so the pipeline doesn't crash
-        return [{"rule_id": "parse_error", "feedback": f"Could not parse LLM response: {raw_text[:300]}"}]
+        print(f"WARNING: JSON parse failed, response length was {len(raw_text)} chars. Truncated response:\n{raw_text[-300:]}")
+        return [{"rule_id": "parse_error", "feedback": f"Could not parse LLM response: {raw_text[:300]}", "suggested_fix": None}]
 
     return feedback_list
 
@@ -106,5 +107,6 @@ if __name__ == "__main__":
 
     for entry in feedback_list:
         print(f"[{entry.get('rule_id')}]")
-        print(entry.get("feedback"))
+        print("FEEDBACK:", entry.get("feedback"))
+        print("SUGGESTED_FIX:", repr(entry.get("suggested_fix")))
         print("-" * 70)

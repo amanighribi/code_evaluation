@@ -66,11 +66,13 @@ def analyze(file: UploadFile = File(...)):
 
                 feedback_by_rule_id = {}
                 for entry in feedback_list:
-                    feedback_by_rule_id.setdefault(entry.get("rule_id"), []).append(entry.get("feedback"))
+                    feedback_by_rule_id.setdefault(entry.get("rule_id"), []).append(entry)
 
                 for issue in file_result["issues"]:
                     matches = feedback_by_rule_id.get(issue["rule_id"], [])
-                    issue["feedback"] = matches.pop(0) if matches else None
+                    match = matches.pop(0) if matches else None
+                    issue["feedback"] = match.get("feedback") if match else None
+                    issue["suggested_fix"] = match.get("suggested_fix") if match else None
                     issue["severity"] = get_severity(issue["rule_id"])
 
             for issue in report["issues"]:
@@ -82,6 +84,7 @@ def analyze(file: UploadFile = File(...)):
                 )
                 if match:
                     issue["feedback"] = match.get("feedback")
+                    issue["suggested_fix"] = match.get("suggested_fix")
 
             report["issues"] = sort_by_severity(report["issues"])
             return report
@@ -114,12 +117,14 @@ def analyze(file: UploadFile = File(...)):
 
         feedback_by_rule_id = {}
         for entry in feedback_list:
-            feedback_by_rule_id.setdefault(entry.get("rule_id"), []).append(entry.get("feedback"))
+            feedback_by_rule_id.setdefault(entry.get("rule_id"), []).append(entry)
 
         for issue in result["issues"]:
             rule_id = issue["rule_id"]
             matches = feedback_by_rule_id.get(rule_id, [])
-            issue["feedback"] = matches.pop(0) if matches else None
+            match = matches.pop(0) if matches else None
+            issue["feedback"] = match.get("feedback") if match else None
+            issue["suggested_fix"] = match.get("suggested_fix") if match else None
             issue["severity"] = get_severity(rule_id)
 
         result["issues"] = sort_by_severity(result["issues"])
