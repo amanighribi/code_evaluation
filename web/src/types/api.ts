@@ -2,13 +2,15 @@
 // Kept in sync manually with backend/main.py, static_analysis/analyzer.py,
 // and exam_mode/full_exam_pipeline.py.
 
+export type Severity = 'critical' | 'major' | 'minor' | 'info' | 'unknown';
+
 export interface Issue {
   rule_id: string;
   message: string;
   file?: string;
   feedback?: string | null;
+  severity?: Severity;
 }
-
 export interface FunctionInfo {
   name: string;
   line: number;
