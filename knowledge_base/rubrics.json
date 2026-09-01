@@ -2,7 +2,7 @@
   {
     "rule_id": "missing_docstring",
     "category": "documentation",
-    "severity": "minor",
+    "severity": "info",
     "source": "PEP 257 - Docstring Conventions",
     "analyzer_check": "has_docstring == false",
     "chunks": {
@@ -72,7 +72,7 @@
   {
     "rule_id": "unused_import",
     "category": "cleanliness",
-    "severity": "minor",
+    "severity": "info",
     "source": "PEP 8 and Pyflakes/Flake8 convention on unused imports",
     "analyzer_check": "imported name never referenced",
     "chunks": {
@@ -86,7 +86,7 @@
   {
     "rule_id": "bare_except",
     "category": "correctness",
-    "severity": "major",
+    "severity": "critical",
     "source": "PEP 8 - bare except clauses should be avoided",
     "analyzer_check": "except: with no exception type",
     "chunks": {
@@ -114,7 +114,7 @@
   {
     "rule_id": "unused_variable",
     "category": "cleanliness",
-    "severity": "minor",
+    "severity": "info",
     "source": "General code cleanliness convention, Pyflakes and Flake8",
     "analyzer_check": "variable assigned but never read",
     "chunks": {

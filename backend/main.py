@@ -1,22 +1,29 @@
 from fastapi import FastAPI, UploadFile, File, Form, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
 import sys
 import os
 import json
 
-
 sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
 
 from static_analysis.analyzer import analyze_code
+from static_analysis.analyze_project import analyze_project
 from rag.retrieve import get_rubric_for_rule
+from rag.rule_metadata import get_severity, sort_by_severity
 from llm.generate_feedback import generate_batch_feedback
-from exam_mode.full_exam_pipeline import run_full_exam_evaluation
-from exam_mode.language_check import check_language_matches
 from exam_mode.full_exam_pipeline import run_full_exam_evaluation, run_full_exam_evaluation_project
+from exam_mode.language_check import check_language_matches
 from exam_mode.entry_point_resolver import EntryPointError
 from project_utils.zip_extractor import extract_zip_safely, cleanup_project_dir, UnsafeZipError
-from static_analysis.analyze_project import analyze_project
 
-app = FastAPI(title="Subject 9 - Code Evaluation API")
+app = FastAPI(title="Code Evaluation API")
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 
 @app.get("/")
@@ -28,8 +35,6 @@ def root():
 def analyze(file: UploadFile = File(...)):
     content = file.file.read()
     filename = file.filename or ""
-    
-
 
     if filename.lower().endswith(".zip"):
         try:
@@ -66,14 +71,19 @@ def analyze(file: UploadFile = File(...)):
                 for issue in file_result["issues"]:
                     matches = feedback_by_rule_id.get(issue["rule_id"], [])
                     issue["feedback"] = matches.pop(0) if matches else None
+                    issue["severity"] = get_severity(issue["rule_id"])
 
-            # keep the flat "issues" list in sync with the per-file feedback we just added
             for issue in report["issues"]:
+                issue["severity"] = get_severity(issue["rule_id"])
                 file_issues = report["per_file"][issue["file"]]["issues"]
-                match = next((fi for fi in file_issues if fi["rule_id"] == issue["rule_id"] and fi["message"] == issue["message"]), None)
+                match = next(
+                    (fi for fi in file_issues if fi["rule_id"] == issue["rule_id"] and fi["message"] == issue["message"]),
+                    None,
+                )
                 if match:
                     issue["feedback"] = match.get("feedback")
 
+            report["issues"] = sort_by_severity(report["issues"])
             return report
 
         finally:
@@ -110,8 +120,12 @@ def analyze(file: UploadFile = File(...)):
             rule_id = issue["rule_id"]
             matches = feedback_by_rule_id.get(rule_id, [])
             issue["feedback"] = matches.pop(0) if matches else None
+            issue["severity"] = get_severity(rule_id)
 
+        result["issues"] = sort_by_severity(result["issues"])
         return result
+
+
 @app.post("/evaluate-exam")
 def evaluate_exam(
     code_file: UploadFile = File(...),
