@@ -26,10 +26,18 @@ export function IssueCard({ issue, index = 0 }: { issue: Issue; index?: number }
         {issue.file && <span className="font-mono text-[11px] text-paper-muted">{issue.file}</span>}
       </div>
       <div className="text-[13.5px] text-[#2B2620] font-semibold mb-2 leading-snug">{issue.message}</div>
-      {issue.feedback && (
+            {issue.feedback && (
         <div className="text-[13px] leading-relaxed text-[#4A4438] pt-2.5 border-t border-dotted border-paper-line">
           <span className="font-mono text-ink-red text-[11px] mr-1.5 font-medium">note —</span>
           {issue.feedback}
+        </div>
+      )}
+      {issue.suggested_fix && (
+        <div className="mt-3">
+          <span className="font-mono text-chalk-green text-[11px] font-medium block mb-1.5">suggested fix —</span>
+          <pre className="bg-[#1B2622] text-[#C9D6C9] text-[12px] font-mono rounded px-3.5 py-3 overflow-x-auto leading-relaxed whitespace-pre-wrap">
+            {issue.suggested_fix}
+          </pre>
         </div>
       )}
     </div>

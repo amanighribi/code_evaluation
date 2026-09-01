@@ -9,6 +9,7 @@ export interface Issue {
   message: string;
   file?: string;
   feedback?: string | null;
+  suggested_fix?: string | null;
   severity?: Severity;
 }
 export interface FunctionInfo {
