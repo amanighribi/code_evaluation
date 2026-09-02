@@ -138,5 +138,75 @@
       "common_mistake": "Duplicate Function Logic common mistake. Copy pasting a function and renaming it slightly to reuse logic, instead of parameterizing the original function.",
       "feedback_tone": "Duplicate Function Logic feedback guidance. Point out both function names and locations and suggest what the shared, consolidated version might look like."
     }
+  },
+  {
+    "rule_id": "line_too_long",
+    "category": "readability",
+    "severity": "info",
+    "source": "General style convention (most language style guides recommend 80-120 char lines)",
+    "analyzer_check": "line length exceeds 120 characters",
+    "chunks": {
+      "rule": "Line Too Long. A line of code exceeding roughly 120 characters is hard to read without horizontal scrolling and often signals overly complex logic packed into one line.",
+      "why_it_matters": "Line Too Long. Long lines are harder to review, especially in side-by-side diffs or on smaller screens, and often indicate an expression that would be clearer split across multiple lines or extracted into a named variable.",
+      "good_example": "Line Too Long example. Break a long chained expression into intermediate named variables, or wrap function arguments onto multiple lines.",
+      "common_mistake": "Line Too Long common mistake. Chaining many operations or conditions on a single line instead of breaking them into readable steps.",
+      "feedback_tone": "Line Too Long feedback guidance. Suggest a natural place to break the line, referencing the actual content where possible."
+    }
+  },
+  {
+    "rule_id": "deep_nesting",
+    "category": "maintainability",
+    "severity": "major",
+    "source": "General complexity convention (deep nesting correlates with high cyclomatic complexity)",
+    "analyzer_check": "indentation depth exceeds 4 levels",
+    "chunks": {
+      "rule": "Deep Nesting. Code nested more than four levels deep (e.g. a loop inside a loop inside multiple conditionals) is difficult to follow and often indicates logic that should be extracted into a separate function.",
+      "why_it_matters": "Deep Nesting. Each additional level of nesting increases the mental effort needed to track the current execution context, and strongly correlates with higher defect rates.",
+      "good_example": "Deep Nesting example. Use early returns/continues to reduce nesting, or extract the innermost logic into a well-named helper function.",
+      "common_mistake": "Deep Nesting common mistake. Adding another nested condition instead of restructuring the function when a new case needs handling.",
+      "feedback_tone": "Deep Nesting feedback guidance. Point to roughly where the deepest nesting occurs and suggest a specific extraction."
+    }
+  },
+  {
+    "rule_id": "todo_comment_left",
+    "category": "cleanliness",
+    "severity": "info",
+    "source": "General code cleanliness convention",
+    "analyzer_check": "TODO or FIXME marker present in a comment",
+    "chunks": {
+      "rule": "Unresolved TODO/FIXME. A comment marked TODO or FIXME left in submitted code signals unfinished or acknowledged-but-unaddressed work.",
+      "why_it_matters": "Unresolved TODO/FIXME. Leaving these markers in a final submission suggests the work was not fully completed or reviewed before submission, and can indicate a genuine gap the author was aware of.",
+      "good_example": "Unresolved TODO/FIXME example. Resolve the TODO before submitting, or if it is genuinely out of scope, briefly note why in a normal comment instead of leaving an actionable-sounding marker.",
+      "common_mistake": "Unresolved TODO/FIXME common mistake. Forgetting to search the file for leftover TODO markers before final submission.",
+      "feedback_tone": "Unresolved TODO/FIXME feedback guidance. Ask directly whether this represents genuinely unfinished work, since that is the most likely explanation."
+    }
+  },
+  {
+    "rule_id": "file_too_long",
+    "category": "maintainability",
+    "severity": "minor",
+    "source": "General modularity convention",
+    "analyzer_check": "file exceeds 400 lines",
+    "chunks": {
+      "rule": "File Too Long. A single source file exceeding roughly 400 lines often indicates it is handling more than one responsibility and could be split into multiple files or modules.",
+      "why_it_matters": "File Too Long. Large files are harder to navigate, review, and reason about as a whole, and often indicate insufficient separation of concerns.",
+      "good_example": "File Too Long example. Split unrelated groups of functions or classes into separate files organized by responsibility.",
+      "common_mistake": "File Too Long common mistake. Continuing to add new functionality to an existing large file rather than considering a new module.",
+      "feedback_tone": "File Too Long feedback guidance. Suggest a plausible way to split the file based on what is visible in it, if identifiable."
+    }
+  },
+  {
+    "rule_id": "trailing_whitespace",
+    "category": "cleanliness",
+    "severity": "info",
+    "source": "General code cleanliness convention",
+    "analyzer_check": "line ends with trailing whitespace",
+    "chunks": {
+      "rule": "Trailing Whitespace. Lines ending with unnecessary spaces or tabs add invisible noise to the file and can cause spurious differences in version control.",
+      "why_it_matters": "Trailing Whitespace. While invisible in most editors, trailing whitespace can cause unnecessary diff noise in version control and is generally considered a sign of an unconfigured editor.",
+      "good_example": "Trailing Whitespace example. Configure the code editor to strip trailing whitespace automatically on save.",
+      "common_mistake": "Trailing Whitespace common mistake. Not noticing trailing spaces since most editors do not visibly display them.",
+      "feedback_tone": "Trailing Whitespace feedback guidance. Keep this feedback very brief, it is a minor cosmetic issue."
+    }
   }
 ]
