@@ -65,16 +65,28 @@ def check_constraints(source_code: str, banned_names: list[str]) -> list[dict]:
     return checker.check()
 
 
-def check_constraints_multilang(source_code: str, banned_names: list[str], language: str) -> list[dict]:
+from exam_mode.constraint_checker_generic import check_constraints_generic
+
+# Languages with a dedicated, AST-precise checker
+PRECISE_LANGUAGES = {"python", "java"}
+
+
+def check_constraints_multilang(source_code: str, banned_names: list, language: str) -> list:
     """Dispatches to the correct language-specific constraint checker.
-    language should be 'python' or 'java'."""
+    Python and Java use AST-precise checkers; any other language falls back
+    to a generic text-based scan."""
     if language == "python":
         return check_constraints(source_code, banned_names)
     elif language == "java":
         return check_constraints_java(source_code, banned_names)
     else:
-        raise ValueError(f"Unsupported language: {language}. Supported: 'python', 'java'.")
+        return check_constraints_generic(source_code, banned_names)
 
+
+def is_precise_language(language: str) -> bool:
+    """Returns True if this language has an AST-based checker (Python/Java),
+    False if it would fall back to the generic text-scan checker."""
+    return language in PRECISE_LANGUAGES
 
 if __name__ == "__main__":
     test_code = """

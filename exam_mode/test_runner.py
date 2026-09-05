@@ -29,7 +29,19 @@ def run_test_cases(code: str, test_cases: list, language: str = "python", timeou
             exec_result = run_java_in_sandbox(code, stdin_input=test_input, timeout=timeout)
             compile_error = exec_result.get("compile_error")
         else:
-            raise ValueError(f"Unsupported language: {language}")
+            results.append({
+                "test_number": i,
+                "input": test_input,
+                "expected_output": expected,
+                "actual_output": "",
+                "passed": False,
+                "timed_out": False,
+                "exit_code": None,
+                "stderr": "",
+                "compile_error": None,
+                "infra_error": f"Sandboxed execution is not yet supported for '{language}'. Only constraint checking was performed for this submission.",
+            })
+            continue
 
         actual = exec_result["stdout"].strip()
         infra_error = exec_result.get("error")
@@ -94,7 +106,19 @@ def run_test_cases_project(project_dir: str, entry_point: str, test_cases: list,
             exec_result = run_java_project_in_sandbox(project_dir, entry_point, stdin_input=test_input, timeout=timeout)
             compile_error = exec_result.get("compile_error")
         else:
-            raise ValueError(f"Unsupported language: {language}")
+            results.append({
+                "test_number": i,
+                "input": test_input,
+                "expected_output": expected,
+                "actual_output": "",
+                "passed": False,
+                "timed_out": False,
+                "exit_code": None,
+                "stderr": "",
+                "compile_error": None,
+                "infra_error": f"Sandboxed execution is not yet supported for '{language}'. Only constraint checking was performed for this submission.",
+            })
+            continue
 
         actual = exec_result["stdout"].strip()
         infra_error = exec_result.get("error")

@@ -15,6 +15,7 @@ from exam_mode.full_exam_pipeline import run_full_exam_evaluation, run_full_exam
 from exam_mode.language_check import check_language_matches
 from exam_mode.entry_point_resolver import EntryPointError
 from project_utils.zip_extractor import extract_zip_safely, cleanup_project_dir, UnsafeZipError
+from static_analysis.generic_analyzer import analyze_generic
 
 app = FastAPI(title="Code Evaluation API")
 
@@ -98,10 +99,13 @@ def analyze(file: UploadFile = File(...)):
         except UnicodeDecodeError:
             raise HTTPException(status_code=400, detail="File is not valid UTF-8 text.")
 
-        try:
-            result = analyze_code(source_code)
-        except SyntaxError as e:
-            raise HTTPException(status_code=400, detail=f"Invalid Python syntax: {e}")
+        if filename.lower().endswith(".py"):
+            try:
+                result = analyze_code(source_code)
+            except SyntaxError as e:
+                raise HTTPException(status_code=400, detail=f"Invalid Python syntax: {e}")
+        else:
+            result = analyze_generic(source_code)
 
         issues_with_rubrics = []
         for issue in result["issues"]:
