@@ -5,6 +5,7 @@ from exam_mode.extract_constraints import extract_exam_metadata
 from exam_mode.constraint_checker import check_constraints_multilang
 from exam_mode.test_runner import run_test_cases, summarize_results
 from exam_mode.evaluate_submission import evaluate_submission
+from exam_mode.language_config import LANGUAGE_CONFIG
 
 
 def run_full_exam_evaluation(instructions: str, student_code: str, language: str = "python") -> dict:
@@ -98,7 +99,10 @@ def run_full_exam_evaluation_project(instructions: str, project_dir: str, langua
         print("Step 3: No test cases found in instructions, skipping execution.")
 
     # Read entry point + all files for evaluation context
-    all_code_files = find_code_files(project_dir, ".py" if language == "python" else ".java")
+    extension_map = {"python": ".py", "java": ".java"}
+    extension_map.update({lang: os.path.splitext(cfg["filename"])[1] for lang, cfg in LANGUAGE_CONFIG.items()})
+    extension = extension_map.get(language, "")
+    all_code_files = find_code_files(project_dir, extension) if extension else []
     combined_source = ""
     for rel_path in all_code_files:
         full_path = os.path.join(project_dir, rel_path)

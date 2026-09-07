@@ -1,6 +1,8 @@
 import re
 from exam_mode.sandbox_executor import run_python_in_sandbox
 from exam_mode.sandbox_executor_java import run_java_in_sandbox
+from exam_mode.sandbox_executor_generic import run_generic_in_sandbox
+from exam_mode.language_config import is_language_supported_for_execution
 
 
 def normalize_output(text: str) -> str:
@@ -27,6 +29,9 @@ def run_test_cases(code: str, test_cases: list, language: str = "python", timeou
             compile_error = None
         elif language == "java":
             exec_result = run_java_in_sandbox(code, stdin_input=test_input, timeout=timeout)
+            compile_error = exec_result.get("compile_error")
+        elif is_language_supported_for_execution(language):
+            exec_result = run_generic_in_sandbox(code, language, stdin_input=test_input, timeout=timeout)
             compile_error = exec_result.get("compile_error")
         else:
             results.append({
