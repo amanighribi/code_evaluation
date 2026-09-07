@@ -1,0 +1,4 @@
+Write a JavaScript program that reads two integers from stdin (one per line)
+and prints their sum. Do not use eval().
+
+For example, given the input 3 and 4, the output should be: 7
