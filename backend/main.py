@@ -17,8 +17,11 @@ from exam_mode.entry_point_resolver import EntryPointError
 from project_utils.zip_extractor import extract_zip_safely, cleanup_project_dir, UnsafeZipError
 from static_analysis.generic_analyzer import analyze_generic
 from exam_mode.language_config import is_language_supported_for_execution
+from progress.db import init_db, save_submission, get_previous_submission
+from progress.diff import compare_submissions, compute_quality_score
 
 app = FastAPI(title="Code Evaluation API")
+init_db()
 
 app.add_middleware(
     CORSMiddleware,
@@ -34,7 +37,7 @@ def root():
 
 
 @app.post("/analyze")
-def analyze(file: UploadFile = File(...)):
+def analyze(file: UploadFile = File(...), user_id: str = Form(default=None)):
     content = file.file.read()
     filename = file.filename or ""
 
@@ -89,6 +92,14 @@ def analyze(file: UploadFile = File(...)):
                     issue["suggested_fix"] = match.get("suggested_fix")
 
             report["issues"] = sort_by_severity(report["issues"])
+
+            if user_id:
+                quality_score = compute_quality_score(report["issues"])
+                previous = get_previous_submission(user_id, filename)
+                if previous:
+                    report["progress"] = compare_submissions(previous["issues"], report["issues"])
+                save_submission(user_id, filename, report["issues"], quality_score)
+
             return report
 
         finally:
@@ -133,6 +144,14 @@ def analyze(file: UploadFile = File(...)):
             issue["severity"] = get_severity(rule_id)
 
         result["issues"] = sort_by_severity(result["issues"])
+
+        if user_id:
+            quality_score = compute_quality_score(result["issues"])
+            previous = get_previous_submission(user_id, filename)
+            if previous:
+                result["progress"] = compare_submissions(previous["issues"], result["issues"])
+            save_submission(user_id, filename, result["issues"], quality_score)
+
         return result
 
 

@@ -1,4 +1,4 @@
-import os
+
 
 def process(data,flag,mode,extra,another_param):
     result = []
@@ -24,7 +24,7 @@ def process(data,flag,mode,extra,another_param):
         else:
             try:
                 result.append(1/data[i])
-            except:
+            except ZeroDivisionError:
                 pass
     return result
 
