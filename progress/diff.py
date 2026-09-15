@@ -6,10 +6,17 @@ def compute_quality_score(issues: list) -> int:
     return sum(SEVERITY_WEIGHT.get(issue.get("severity", "unknown"), 1) for issue in issues)
 
 
+import re
+
+_LINE_NUMBER_PATTERN = re.compile(r"\(line \d+\)|\bline \d+\b", re.IGNORECASE)
+
+
 def _issue_signature(issue: dict) -> str:
     """A stable identity for one issue, used to match the 'same' issue across submissions.
-    Based on rule_id + message, since exact line numbers can shift with unrelated edits."""
-    return f"{issue.get('rule_id')}::{issue.get('message')}"
+    Line numbers are stripped from the message before comparing, since they shift
+    whenever unrelated lines are added/removed elsewhere in the file."""
+    message_without_line = _LINE_NUMBER_PATTERN.sub("", issue.get("message", ""))
+    return f"{issue.get('rule_id')}::{message_without_line.strip()}"
 
 
 def compare_submissions(previous_issues: list, current_issues: list) -> dict:

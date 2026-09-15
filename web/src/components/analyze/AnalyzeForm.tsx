@@ -1,13 +1,13 @@
 import { useRef, useState } from 'react';
 
 interface AnalyzeFormProps {
-  onSubmit: (file: File) => void;
+  onSubmit: (file: File, userId?: string) => void;
   isLoading: boolean;
 }
-
 export function AnalyzeForm({ onSubmit, isLoading }: AnalyzeFormProps) {
   const fileRef = useRef<HTMLInputElement>(null);
   const [fileName, setFileName] = useState<string | null>(null);
+  const [userId, setUserId] = useState('');
 
   function handleSubmit() {
     const file = fileRef.current?.files?.[0];
@@ -15,7 +15,8 @@ export function AnalyzeForm({ onSubmit, isLoading }: AnalyzeFormProps) {
       alert('Choose a .py file or a .zip project first.');
       return;
     }
-    onSubmit(file);
+    onSubmit(file, userId.trim() || undefined);
+  
   }
 
   return (
@@ -40,6 +41,18 @@ export function AnalyzeForm({ onSubmit, isLoading }: AnalyzeFormProps) {
           Upload a single Python file for a quick check, or a zipped project folder for a full multi-file review.
           {fileName && <span className="block mt-1 text-chalk-green">Selected: {fileName}</span>}
         </p>
+      </div>
+      <div className="mb-5">
+        <label className="block font-mono text-xs text-muted mb-1.5">
+          User ID <span className="opacity-60">— optional, tracks your progress across submissions</span>
+        </label>
+        <input
+          type="text"
+          value={userId}
+          onChange={(e) => setUserId(e.target.value)}
+          placeholder="e.g. your name"
+          className="w-full bg-slate-3 border border-white/14 text-chalk-white text-[13.5px] rounded-md px-3 py-2.5 focus:outline-none focus:border-chalk-green focus:ring-2 focus:ring-chalk-green/25"
+        />
       </div>
 
       <button

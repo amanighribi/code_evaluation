@@ -32,9 +32,12 @@ export async function checkBackendHealth(): Promise<boolean> {
   }
 }
 
-export async function analyzeCode(file: File): Promise<AnalyzeResponse> {
+export async function analyzeCode(file: File, userId?: string): Promise<AnalyzeResponse> {
   const formData = new FormData();
   formData.append('file', file);
+  if (userId) {
+    formData.append('user_id', userId);
+  }
 
   let res: Response;
   try {

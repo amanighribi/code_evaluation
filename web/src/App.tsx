@@ -25,10 +25,10 @@ export default function App() {
     setResult({ status: 'empty' });
   }
 
-  async function handleAnalyze(file: File) {
+  async function handleAnalyze(file: File, userId?: string) {
     setResult({ status: 'loading', message: 'Running static analysis + generating grounded feedback…' });
     try {
-      const data = await analyzeCode(file);
+      const data = await analyzeCode(file, userId);
       setResult({ status: 'analyze-success', data });
     } catch (err) {
       setResult({ status: 'error', message: err instanceof ApiRequestError ? err.message : 'Analysis failed.' });

@@ -34,6 +34,7 @@ export interface SingleFileAnalysis {
   functions: FunctionInfo[];
   classes: ClassInfo[];
   issues: Issue[];
+  progress?: ProgressComparison;
 }
 
 /** Response shape for a zip-project POST /analyze request. */
@@ -46,12 +47,26 @@ export interface ProjectAnalysis {
   total_issues: number;
   issues: Issue[];
   per_file: Record<string, SingleFileAnalysis>;
+  progress?: ProgressComparison;
+
 }
 
 export type AnalyzeResponse = SingleFileAnalysis | ProjectAnalysis;
 
 export function isProjectAnalysis(r: AnalyzeResponse): r is ProjectAnalysis {
   return (r as ProjectAnalysis).files_analyzed !== undefined;
+}
+
+export interface ProgressComparison {
+  trend: 'improved' | 'regressed' | 'unchanged';
+  previous_quality_score: number;
+  current_quality_score: number;
+  resolved_issues: Issue[];
+  new_issues: Issue[];
+  persisting_issues: Issue[];
+  resolved_count: number;
+  new_count: number;
+  persisting_count: number;
 }
 
 export interface ConstraintViolation {

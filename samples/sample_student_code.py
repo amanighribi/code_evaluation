@@ -1,5 +1,4 @@
 
-
 def process(data,flag,mode,extra,another_param):
     result = []
     for i in range(len(data)):
@@ -24,7 +23,7 @@ def process(data,flag,mode,extra,another_param):
         else:
             try:
                 result.append(1/data[i])
-            except ZeroDivisionError:
+            except:
                 pass
     return result
 

@@ -2,6 +2,7 @@ import type { AnalyzeResponse } from '../../types/api';
 import { isProjectAnalysis } from '../../types/api';
 import { IssueCard } from './IssueCard';
 import { StatChip } from '../shared/ResultStates';
+import { ProgressPanel } from './ProgressPanel';
 
 export function AnalyzeResults({ data }: { data: AnalyzeResponse }) {
   const isProject = isProjectAnalysis(data);
@@ -11,6 +12,8 @@ export function AnalyzeResults({ data }: { data: AnalyzeResponse }) {
 
   return (
     <div>
+      {data.progress && <ProgressPanel progress={data.progress} />}
+
       <div className="flex gap-6 pb-5 mb-5.5 border-b border-dashed border-[#D8CFB6] flex-wrap">
         {isProject && <StatChip value={data.files_analyzed} label="files analyzed" />}
         <StatChip value={totalIssues} label="issues found" />
