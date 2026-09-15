@@ -19,6 +19,7 @@ from static_analysis.generic_analyzer import analyze_generic
 from exam_mode.language_config import is_language_supported_for_execution
 from progress.db import init_db, save_submission, get_previous_submission
 from progress.diff import compare_submissions, compute_quality_score
+from auth.routes import router as auth_router
 
 app = FastAPI(title="Code Evaluation API")
 init_db()
@@ -30,6 +31,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+app.include_router(auth_router)
 
 @app.get("/")
 def root():
