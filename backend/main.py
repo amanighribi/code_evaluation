@@ -20,6 +20,10 @@ from exam_mode.language_config import is_language_supported_for_execution
 from progress.db import init_db, save_submission, get_previous_submission
 from progress.diff import compare_submissions, compute_quality_score
 from auth.routes import router as auth_router
+from auth.dependencies import get_current_user_optional
+from progress.db import get_user_history
+from fastapi import Depends
+from auth.dependencies import get_current_user_optional, require_teacher
 
 app = FastAPI(title="Code Evaluation API")
 init_db()
@@ -39,7 +43,8 @@ def root():
 
 
 @app.post("/analyze")
-def analyze(file: UploadFile = File(...), user_id: str = Form(default=None)):
+def analyze(file: UploadFile = File(...), current_user=Depends(get_current_user_optional)):
+    user_id = current_user["username"] if current_user else None
     content = file.file.read()
     filename = file.filename or ""
 
@@ -156,6 +161,11 @@ def analyze(file: UploadFile = File(...), user_id: str = Form(default=None)):
 
         return result
 
+@app.get("/history")
+def history(current_user=Depends(get_current_user_optional)):
+    if not current_user:
+        raise HTTPException(status_code=401, detail="Authentication required.")
+    return get_user_history(current_user["username"])
 
 @app.post("/evaluate-exam")
 def evaluate_exam(
@@ -163,6 +173,7 @@ def evaluate_exam(
     instructions_file: UploadFile = File(...),
     language: str = Form(default="python"),
     entry_point: str = Form(default=None),
+    current_user=Depends(require_teacher),
 ):
     code_content = code_file.file.read()
     instructions_content = instructions_file.file.read()
