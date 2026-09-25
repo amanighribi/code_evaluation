@@ -13,7 +13,7 @@ def run_python_in_sandbox(code: str, stdin_input: str = "", timeout: int = DEFAU
     Returns a dict with stdout, stderr, exit_code, timed_out, and error (if the sandbox itself failed)."""
 
     run_id = uuid.uuid4().hex[:8]
-    tmp_dir = os.path.join(os.path.dirname(__file__), "sandbox_tmp", run_id)
+    tmp_dir = tempfile.mkdtemp(prefix=f"sandbox_{run_id}_")
     os.makedirs(tmp_dir, exist_ok=True)
     code_path = os.path.join(tmp_dir, "student_code.py")
 

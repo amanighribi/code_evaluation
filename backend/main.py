@@ -24,6 +24,7 @@ from auth.dependencies import get_current_user_optional
 from progress.db import get_user_history
 from fastapi import Depends
 from auth.dependencies import get_current_user_optional, require_teacher
+from project_utils.text_extraction import extract_text_from_file, UnsupportedFileTypeError, TextExtractionError
 
 app = FastAPI(title="Code Evaluation API")
 init_db()
@@ -167,6 +168,15 @@ def history(current_user=Depends(get_current_user_optional)):
         raise HTTPException(status_code=401, detail="Authentication required.")
     return get_user_history(current_user["username"])
 
+@app.get("/history/{submission_id}")
+def history_detail(submission_id: int, current_user=Depends(get_current_user_optional)):
+    if not current_user:
+        raise HTTPException(status_code=401, detail="Authentication required.")
+    submission = get_submission_by_id(current_user["username"], submission_id)
+    if submission is None:
+        raise HTTPException(status_code=404, detail="Submission not found.")
+    return submission
+
 @app.post("/evaluate-exam")
 def evaluate_exam(
     code_file: UploadFile = File(...),
@@ -179,10 +189,14 @@ def evaluate_exam(
     instructions_content = instructions_file.file.read()
     code_filename = code_file.filename or ""
 
+    instructions_filename = instructions_file.filename or "instructions.txt"
+
     try:
-        instructions = instructions_content.decode("utf-8")
-    except UnicodeDecodeError:
-        raise HTTPException(status_code=400, detail="Instructions file is not valid UTF-8 text.")
+        instructions = extract_text_from_file(instructions_filename, instructions_content)
+    except UnsupportedFileTypeError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except TextExtractionError as e:
+        raise HTTPException(status_code=400, detail=str(e))
 
     # No hard restriction here anymore — unsupported languages for execution
     # are handled gracefully downstream (constraint checking still works;

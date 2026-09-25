@@ -94,6 +94,28 @@ def get_user_history(user_id: str, filename: str = None, limit: int = 20):
     ]
 
 
+def get_submission_by_id(user_id: str, submission_id: int):
+    """Returns one full submission (including its issues) if it belongs to user_id, else None.
+    The ownership check mirrors get_previous_submission/get_user_history: a user can only
+    ever read their own rows, never guess another user's submission by id."""
+    conn = get_connection()
+    row = conn.execute(
+        "SELECT * FROM submissions WHERE id = ? AND user_id = ?",
+        (submission_id, user_id),
+    ).fetchone()
+    conn.close()
+    if row is None:
+        return None
+    return {
+        "id": row["id"],
+        "filename": row["filename"],
+        "timestamp": row["timestamp"],
+        "issues": json.loads(row["issues_json"]),
+        "total_issues": row["total_issues"],
+        "quality_score": row["quality_score"],
+    }
+
+
 if __name__ == "__main__":
     init_db()
     print(f"Database initialized at: {os.path.abspath(DB_PATH)}")

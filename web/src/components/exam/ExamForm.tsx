@@ -49,10 +49,10 @@ export function ExamForm({ onSubmit, isLoading }: ExamFormProps) {
       </div>
 
       <div className="mb-4">
-        <label className="block eyebrow text-muted mb-2">Exam instructions (.txt)</label>
-        <input ref={instrRef} type="file" accept=".txt" className={inputClass + ' cursor-pointer'} />
+        <label className="block eyebrow text-muted mb-2">Exam instructions </label>
+        <input ref={instrRef} type="file" accept=".txt,.pdf,.docx" className={inputClass + ' cursor-pointer'} />
         <p className="text-[11.5px] text-muted mt-2 leading-relaxed">
-          Free text, French or English. Banned functions and test cases are extracted automatically.
+          Free text, French or English. Accepts .txt, .pdf, or .docx. Banned functions and test cases are extracted automatically.
         </p>
       </div>
 

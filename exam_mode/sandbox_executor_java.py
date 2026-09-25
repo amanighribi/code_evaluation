@@ -3,6 +3,7 @@ import os
 import uuid
 import sys
 import re
+import tempfile
 
 DOCKER_IMAGE = "eclipse-temurin:17-jdk"
 DEFAULT_TIMEOUT = 20  # seconds; covers compile + run, plus Docker cold start
@@ -28,7 +29,7 @@ def run_java_in_sandbox(code: str, stdin_input: str = "", timeout: int = DEFAULT
 
     class_name = _extract_public_class_name(code)
     run_id = uuid.uuid4().hex[:8]
-    tmp_dir = os.path.join(os.path.dirname(__file__), "sandbox_tmp", run_id)
+    tmp_dir = tempfile.mkdtemp(prefix=f"sandbox_{run_id}_")
     os.makedirs(tmp_dir, exist_ok=True)
     code_path = os.path.join(tmp_dir, f"{class_name}.java")
 

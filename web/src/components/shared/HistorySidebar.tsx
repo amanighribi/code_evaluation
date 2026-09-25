@@ -3,6 +3,8 @@ import type { HistoryEntry } from '../../types/api';
 interface HistorySidebarProps {
   history: HistoryEntry[];
   loading: boolean;
+  selectedId?: number | null;
+  onSelect: (id: number) => void;
 }
 
 function formatDate(iso: string): string {
@@ -15,7 +17,7 @@ function formatDate(iso: string): string {
   }
 }
 
-export function HistorySidebar({ history, loading }: HistorySidebarProps) {
+export function HistorySidebar({ history, loading, selectedId, onSelect }: HistorySidebarProps) {
   return (
     <aside className="w-full lg:w-72 flex-shrink-0 bg-white border-r border-border px-5 py-6 overflow-y-auto">
       <div className="eyebrow text-muted mb-4">My submissions</div>
@@ -40,8 +42,18 @@ export function HistorySidebar({ history, loading }: HistorySidebarProps) {
           else { trendLabel = '= unchanged'; trendClass = 'text-muted'; }
         }
 
+        const isSelected = entry.id === selectedId;
+
         return (
-          <div key={entry.id} className="border-b border-border py-3 last:border-0">
+          <div
+            key={entry.id}
+            onClick={() => onSelect(entry.id)}
+            role="button"
+            tabIndex={0}
+            onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') onSelect(entry.id); }}
+            className={`border-b border-border py-3 last:border-0 cursor-pointer rounded-md px-2 -mx-2 transition-colors
+              ${isSelected ? 'bg-esprit-red/5' : 'hover:bg-black/[0.02]'}`}
+          >
             <div className="font-mono text-[12.5px] text-ink truncate font-medium">{entry.filename}</div>
             <div className="text-[11px] text-muted mt-1">{formatDate(entry.timestamp)}</div>
             <div className="flex items-center gap-3 mt-1.5 text-[11.5px]">

@@ -2,6 +2,7 @@ import subprocess
 import os
 import uuid
 import sys
+import tempfile
 from exam_mode.language_config import get_language_config
 
 DEFAULT_TIMEOUT = 25  # generous; covers image pull/cold-start + compile + run
@@ -23,7 +24,7 @@ def run_generic_in_sandbox(code: str, language: str, stdin_input: str = "", time
         return result
 
     run_id = uuid.uuid4().hex[:8]
-    tmp_dir = os.path.join(os.path.dirname(__file__), "sandbox_tmp", run_id)
+    tmp_dir = tempfile.mkdtemp(prefix=f"sandbox_{run_id}_")
     os.makedirs(tmp_dir, exist_ok=True)
     code_path = os.path.join(tmp_dir, config["filename"])
 

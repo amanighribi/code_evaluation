@@ -1,6 +1,6 @@
 import type {
   AnalyzeResponse, ExamEvaluationResponse, Language, ApiError,
-  AuthResponse, HistoryEntry, Role,
+  AuthResponse, HistoryEntry, HistoryDetail, Role,
 } from '../types/api';
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
@@ -102,6 +102,16 @@ export async function fetchHistory(): Promise<HistoryEntry[]> {
     throw new ApiRequestError(`Cannot reach the server at ${API_BASE}.`);
   }
   return parseJsonOrThrow<HistoryEntry[]>(res);
+}
+
+export async function fetchHistoryDetail(id: number): Promise<HistoryDetail> {
+  let res: Response;
+  try {
+    res = await fetch(`${API_BASE}/history/${id}`, { method: 'GET', headers: baseHeaders() });
+  } catch {
+    throw new ApiRequestError(`Cannot reach the server at ${API_BASE}.`);
+  }
+  return parseJsonOrThrow<HistoryDetail>(res);
 }
 
 export async function analyzeCode(file: File): Promise<AnalyzeResponse> {

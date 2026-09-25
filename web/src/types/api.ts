@@ -93,6 +93,10 @@ export interface HistoryEntry {
   total_issues: number; quality_score: number;
 }
 
+export interface HistoryDetail extends HistoryEntry {
+  issues: Issue[];
+}
+
 export interface AuthResponse {
   access_token: string; token_type: string; username: string; role: Role;
 }

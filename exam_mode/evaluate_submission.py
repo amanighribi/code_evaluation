@@ -1,16 +1,32 @@
 import os
 import json
-from dotenv import load_dotenv
-from groq import Groq
-
-load_dotenv()
-
-client = Groq(api_key=os.environ.get("GROQ_API_KEY"))
+import re
 
 MODEL = "openai/gpt-oss-120b"
 
+_client = None
 
-def build_evaluation_prompt(instructions, student_code, constraint_violations, test_results):
+
+def _get_client():
+    global _client
+    if _client is None:
+        from dotenv import load_dotenv
+        from groq import Groq
+        load_dotenv()
+        _client = Groq(api_key=os.environ.get("GROQ_API_KEY"))
+    return _client
+
+
+_FR = {"le", "la", "les", "des", "du", "de", "un", "une", "et", "est", "sur", "pour", "dans", "que", "qui", "avec", "au", "aux", "par", "ne", "pas"}
+_EN = {"the", "and", "is", "of", "to", "in", "for", "with", "that", "this", "are", "be", "on", "by"}
+
+
+def _output_language(instructions: str) -> str:
+    words = re.findall(r"[a-zàâçéèêëîïôûùüÿœ']+", instructions.lower())
+    return "French" if sum(w in _FR for w in words) > sum(w in _EN for w in words) else "English"
+
+
+def build_evaluation_prompt(instructions, student_code, constraint_violations, test_results, static_results=None):
     violations_text = "None detected." if not constraint_violations else "\n".join(
         f"- {v['message']}" for v in constraint_violations
     )
@@ -30,47 +46,79 @@ def build_evaluation_prompt(instructions, student_code, constraint_violations, t
             if r.get("compile_error"):
                 tests_text += f"  Compile error: {r['compile_error'][:200]}\n"
     else:
-        tests_text = "No test cases were executed for this submission."
+        tests_text = "NO test was executed for this submission. Functional correctness has NOT been verified by execution."
+
+    static_block = ""
+    if static_results and static_results.get("checks"):
+        from exam_mode.java_static_checks import render_evidence_for_prompt
+        static_block = render_evidence_for_prompt(static_results) + "\n\n"
+
+    language = _output_language(instructions)
 
     prompt = (
         "You are an experienced programming instructor grading a student's exam submission.\n\n"
-        "Respond in the SAME language as the exam instructions below (if the instructions are in French, respond in French; if in English, respond in English).\n\n"
+        f"Write ALL text fields of your answer in {language} (the language of the exam instructions).\n\n"
         "EXAM INSTRUCTIONS:\n" + instructions + "\n\n"
         "STUDENT'S CODE:\n```\n" + student_code + "\n```\n\n"
         "CONSTRAINT VIOLATIONS (banned functions/imports detected by static analysis):\n" + violations_text + "\n\n"
-        "ACTUAL TEST EXECUTION RESULTS (the code was run in a sandbox against real inputs):\n" + tests_text + "\n\n"
-        "Using this evidence (constraint violations and REAL execution results, not just your reading of the code), "
-        "evaluate this submission as a teacher would. Assess:\n"
-        "1. Does the code correctly implement what the instructions ask for, based on the actual test results?\n"
-        "2. Does the approach match what was required (e.g. was a specific algorithm genuinely implemented, or circumvented using a banned shortcut)?\n"
+        + static_block +
+        "TEST EXECUTION RESULTS:\n" + tests_text + "\n\n"
+        "Evaluate this submission as a teacher would. Base every claim on the verified facts above, on real test "
+        "results, or on code you can point to. If you suspect a defect that you cannot demonstrate from the code, "
+        "say it is UNVERIFIED instead of stating it as fact. Never recommend a change that contradicts the exam's "
+        "class diagram. Assess:\n"
+        "1. Does the code implement what the instructions ask for?\n"
+        "2. Does the approach match what was required?\n"
         "3. If tests failed, what does the error suggest about the bug?\n"
         "4. Overall assessment and constructive feedback for the student.\n\n"
-        "Also propose a numeric grade out of 20, following typical French academic grading conventions, "
-        "reflecting both correctness (based on real test results, not assumptions) and whether the required "
-        "approach was genuinely followed (e.g. a correct answer obtained via a banned shortcut should be "
-        "graded significantly lower than a genuine, correct implementation of the required approach).\n\n"
+        "GRADING: if the exam states points per question (e.g. '(/1.5)', '(6 points)'), use exactly that scheme: "
+        "one entry per graded item in points_breakdown, max_points taken from the exam, all max_points adding up to 20. "
+        "Award partial points where justified. If the exam gives no point scheme, return an empty points_breakdown "
+        "and estimate grade_out_of_20 following French academic conventions. If nothing was executed, do not award "
+        "full points for behaviour you could not verify.\n\n"
         "Respond ONLY with a valid JSON object, no other text before or after it, in this exact format:\n"
         '{"meets_requirements": "yes" | "partially" | "no", "grade_out_of_20": 0-20, '
+        '"points_breakdown": [{"item": "...", "max_points": 0, "awarded_points": 0, "justification": "..."}], '
         '"approach_assessment": "...", "correctness_notes": "...", "feedback": "..."}'
     )
 
     return prompt
 
 
-def evaluate_submission(instructions, student_code, constraint_violations=None, test_results=None):
+def _validated_breakdown(parsed: dict):
+    """Returns a clean breakdown, or None if it is missing/inconsistent (never trust a sum the model wrote)."""
+    bd = parsed.get("points_breakdown")
+    if not isinstance(bd, list) or not bd:
+        return None
+    clean = []
+    for item in bd:
+        try:
+            mx, aw = float(item["max_points"]), float(item["awarded_points"])
+        except (KeyError, TypeError, ValueError):
+            return None
+        if mx < 0 or aw < 0 or aw > mx:
+            return None
+        clean.append({"item": str(item.get("item", "")), "max_points": mx, "awarded_points": aw,
+                      "justification": str(item.get("justification", ""))})
+    if abs(sum(i["max_points"] for i in clean) - 20) > 0.01:
+        return None
+    return clean
+
+
+def evaluate_submission(instructions, student_code, constraint_violations=None, test_results=None, static_results=None):
     constraint_violations = constraint_violations or []
     test_results = test_results or []
 
-    prompt = build_evaluation_prompt(instructions, student_code, constraint_violations, test_results)
+    prompt = build_evaluation_prompt(instructions, student_code, constraint_violations, test_results, static_results)
 
-    response = client.chat.completions.create(
+    response = _get_client().chat.completions.create(
         model=MODEL,
         messages=[{"role": "user", "content": prompt}],
-        temperature=0.3,
-        max_tokens=800,
+        temperature=0.0,      # was 0.3: sampling noise alone can move a grade by several points
+        max_tokens=6000,      # gpt-oss-120b reasoning tokens count against this; 2500 risks a truncated, unparsable answer
     )
 
-    raw_text = response.choices[0].message.content.strip()
+    raw_text = (response.choices[0].message.content or "").strip()
 
     if raw_text.startswith("```"):
         raw_text = raw_text.strip("`")
@@ -80,15 +128,27 @@ def evaluate_submission(instructions, student_code, constraint_violations=None, 
 
     try:
         parsed = json.loads(raw_text)
-        grade = parsed.get("grade_out_of_20")
-        if not isinstance(grade, (int, float)) or not (0 <= grade <= 20):
-            parsed["grade_out_of_20"] = None  # invalid/out-of-range grade is safer than a wrong number
-        return parsed
     except json.JSONDecodeError:
         return {
             "meets_requirements": "unknown",
             "grade_out_of_20": None,
+            "grade_source": None,
+            "points_breakdown": [],
             "approach_assessment": "",
             "correctness_notes": "",
             "feedback": "Could not parse evaluation response: " + raw_text[:300],
         }
+
+    breakdown = _validated_breakdown(parsed)
+    if breakdown:
+        # The grade is computed here from the itemised points, not taken from the model's own total.
+        parsed["points_breakdown"] = breakdown
+        parsed["grade_out_of_20"] = round(sum(i["awarded_points"] for i in breakdown), 2)
+        parsed["grade_source"] = "points_breakdown"
+    else:
+        parsed["points_breakdown"] = []
+        grade = parsed.get("grade_out_of_20")
+        if not isinstance(grade, (int, float)) or isinstance(grade, bool) or not (0 <= grade <= 20):
+            parsed["grade_out_of_20"] = None  # invalid/out-of-range grade is safer than a wrong number
+        parsed["grade_source"] = "model_estimate"
+    return parsed
