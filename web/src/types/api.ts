@@ -95,6 +95,7 @@ export interface HistoryEntry {
 
 export interface HistoryDetail extends HistoryEntry {
   issues: Issue[];
+  lines_of_code: number;
 }
 
 export interface AuthResponse {

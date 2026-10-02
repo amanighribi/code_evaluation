@@ -22,19 +22,27 @@ def init_db():
             timestamp TEXT NOT NULL,
             issues_json TEXT NOT NULL,
             total_issues INTEGER NOT NULL,
-            quality_score INTEGER NOT NULL
+            quality_score INTEGER NOT NULL,
+            lines_of_code INTEGER
         )
     """)
     conn.execute("CREATE INDEX IF NOT EXISTS idx_user_file ON submissions(user_id, filename)")
+    # Migration for databases created before lines_of_code existed. Safe to run on every
+    # startup: on an already-migrated database this just raises "duplicate column name",
+    # which is swallowed below.
+    try:
+        conn.execute("ALTER TABLE submissions ADD COLUMN lines_of_code INTEGER")
+    except sqlite3.OperationalError:
+        pass
     conn.commit()
     conn.close()
 
 
-def save_submission(user_id: str, filename: str, issues: list, quality_score: int):
+def save_submission(user_id: str, filename: str, issues: list, quality_score: int, lines_of_code: int = 0):
     conn = get_connection()
     conn.execute(
-        "INSERT INTO submissions (user_id, filename, timestamp, issues_json, total_issues, quality_score) "
-        "VALUES (?, ?, ?, ?, ?, ?)",
+        "INSERT INTO submissions (user_id, filename, timestamp, issues_json, total_issues, quality_score, lines_of_code) "
+        "VALUES (?, ?, ?, ?, ?, ?, ?)",
         (
             user_id,
             filename,
@@ -42,6 +50,7 @@ def save_submission(user_id: str, filename: str, issues: list, quality_score: in
             json.dumps(issues),
             len(issues),
             quality_score,
+            lines_of_code,
         ),
     )
     conn.commit()
@@ -113,6 +122,9 @@ def get_submission_by_id(user_id: str, submission_id: int):
         "issues": json.loads(row["issues_json"]),
         "total_issues": row["total_issues"],
         "quality_score": row["quality_score"],
+        # Rows saved before this column existed will read back as None; treat that as 0
+        # rather than leaking a null into a field the frontend types as a plain number.
+        "lines_of_code": row["lines_of_code"] if row["lines_of_code"] is not None else 0,
     }
 
 

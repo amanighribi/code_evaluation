@@ -21,7 +21,7 @@ from progress.db import init_db, save_submission, get_previous_submission
 from progress.diff import compare_submissions, compute_quality_score
 from auth.routes import router as auth_router
 from auth.dependencies import get_current_user_optional
-from progress.db import get_user_history
+from progress.db import get_user_history, get_submission_by_id
 from fastapi import Depends
 from auth.dependencies import get_current_user_optional, require_teacher
 from project_utils.text_extraction import extract_text_from_file, UnsupportedFileTypeError, TextExtractionError
@@ -106,7 +106,7 @@ def analyze(file: UploadFile = File(...), current_user=Depends(get_current_user_
                 previous = get_previous_submission(user_id, filename)
                 if previous:
                     report["progress"] = compare_submissions(previous["issues"], report["issues"])
-                save_submission(user_id, filename, report["issues"], quality_score)
+                save_submission(user_id, filename, report["issues"], quality_score, report["total_lines_of_code"])
 
             return report
 
@@ -158,7 +158,7 @@ def analyze(file: UploadFile = File(...), current_user=Depends(get_current_user_
             previous = get_previous_submission(user_id, filename)
             if previous:
                 result["progress"] = compare_submissions(previous["issues"], result["issues"])
-            save_submission(user_id, filename, result["issues"], quality_score)
+            save_submission(user_id, filename, result["issues"], quality_score, result["lines_of_code"])
 
         return result
 
